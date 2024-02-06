@@ -1,4 +1,4 @@
-# SimSSTA
+# SimSSTA#
 
 SimSSTA is a package for simulating agents in a 2D environment. Currently, the development of this resource is dedicated to aiding SSTA-related (Self-Supervised Traffic Advisor) projects.
 
