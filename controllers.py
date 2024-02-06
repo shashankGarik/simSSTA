@@ -88,8 +88,6 @@ class DoubleIntegrator:
         self.x = self.x + self.dt * v
         self.remove_agent_goal()
         self.frame_agents()
-     
-        
     
     def create_agents(self, new_agents):
         self.x = np.concatenate([self.x, new_agents["start"]])
@@ -98,17 +96,6 @@ class DoubleIntegrator:
 
 
     # This function takes the local points and checks the points inside the bounding box
-    def camera_agents(self,local_points_camera_1,box_limits):
-        min_x_1,max_x_1,min_y_1,max_y_1=box_limits[0]
-        x_row_1,y_row_1=local_points_camera_1[:,0],local_points_camera_1[:,1]
-
-        inside_camera_x = np.logical_and(x_row_1 >= min_x_1, x_row_1 <= max_x_1) & np.logical_and(y_row_1 >= min_y_1, y_row_1 <= max_y_1)
-        camera_x_indices=np.where(inside_camera_x)
-        self.camera_x_global=self.x[camera_x_indices]
-        self.camera_x_local=local_points_camera_1[camera_x_indices]
-        print(len(self.camera_x_local))
-        return  self.camera_x_local,self.camera_x_global
-
     def remove_agent_goal(self):
         # print(self.dist2goal)
         indices_less_than_5 = np.where(self.dist2goal < 5.5)[0]
@@ -126,7 +113,6 @@ class DoubleIntegrator:
         self.total_collision+=count_collisons
         return (self.total_collision/self.total_time),self.total_time
    
-    
     def intersection(self):
         return self.intersections
     

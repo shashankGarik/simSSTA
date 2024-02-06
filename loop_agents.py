@@ -23,7 +23,6 @@ class LoopSimulation:
         self.frame_w = frame_w
         self.dist2GE_min = dist2GE_min
         
-
         # Initialize Pygame necessary for initialising the simulation window and graphics
         print('Initializing')
         pygame.init()

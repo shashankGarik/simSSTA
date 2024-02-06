@@ -80,10 +80,10 @@ while len(points) > 1:
         points = points[np.setdiff1d(range(len(points)),obs_point)]
 
 
-print(start)
-print(goal)
-print(len(obs['rectangle']))
-print(obs['rectangle'])
+# print(start)
+# print(goal)
+# print(len(obs['rectangle']))
+# print(obs['rectangle'])
 
 
 
