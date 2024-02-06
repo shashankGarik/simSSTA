@@ -16,7 +16,7 @@ class CarSimulation(Environment):
         pygame.display.set_caption("Car Simulation")#Windows heading
 
         self.debugging = False
-        self.save_data = True
+        self.save_data = False
 
         # Set up car and goal positions
         self.car_pos = start_vec
@@ -57,7 +57,7 @@ class CarSimulation(Environment):
             self.car_pos,self.goal_pos = self.control.car_pos()
             self.update_poses(self.car_pos, self.goal_pos)
             self.intersections=self.control.intersection()
-            self.draw_map() # draws map with obstacles
+            self.draw_map('white') # draws map with obstacles
             
             self.draw_agents_with_goals(self.control.agent_collision) # draws agents and their respective goal positions
             speed=self.control.traffic_speed()
@@ -72,21 +72,24 @@ class CarSimulation(Environment):
                 self.display_traffic_speed(speed)
 
             # setting the segment
-            if self.save_data == True:
-                twin_boxes = np.array([[-60,300,400,300],[-60,450,50,300]])
-                self.frame_angle,centers,(t_l,t_r,b_l,b_r)=self.segment_frame(twin_boxes)
-                side_length = twin_boxes[:,-1]
-                # plotting the segment
-
+            twin_boxes = np.array([[-60,300,400,300],[-60,450,50,300]])
+            self.frame_angle,centers,(t_l,t_r,b_l,b_r)=self.segment_frame(twin_boxes)
+            side_length = twin_boxes[:,-1]
+            # plotting the segment
+            #local points of all self.x
+            global_points=self.control.x[:,:2]
+            local_points = self.global_local_transform(global_points,t_l,self.frame_angle, )
+            
+            if self.debugging:
                 self.plot_segment_frame(centers,(t_l,t_r,b_l,b_r))
-                #local points of all self.x
-                global_points=self.control.x[:,:2]
-                local_points = self.global_local_transform(global_points,t_l,self.frame_angle)
+
+            if self.save_data:
+                
                 #getting the agents in the frame
                 # camera_x_local,camera_x_global=self.camera_agents(local_points,side_length, self.control.x) #####uncomment
                 # print(camera_x_local,len(camera_x_local))
                 #saving camera1 dataset
-                self.save_camera_image(side_length,(t_l,t_r,b_l,b_r),self.timer)
+                self.save_camera_image(side_length,(t_l,t_r,b_l,b_r),self.timer, 6000, 1500, 1500)
                 #saving camera csv file
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
 

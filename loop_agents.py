@@ -36,7 +36,6 @@ class LoopSimulation:
         self.agents = {"start" : [], "goal" : []}
 
     def run_simulation(self,old_agents_start=None,old_agents_goal=None):
-        print('running')
         self.old_agents_start=old_agents_start
         self.old_agents_goal=old_agents_goal
         start_points,goal_points=self.create_agents(1, 50)

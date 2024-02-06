@@ -68,7 +68,6 @@ class Environment():
 
         return f_angle, np.array([x_c, y_c]), (t_l,t_r,b_l,b_r)
         
-        return frame_angle,(xc,yc),(tl,tr,bl,br)
     
     def rotate_points(self,points, angle, center):
         """
@@ -143,12 +142,12 @@ class Environment():
     ################ Metrics ########################
     
     #plotting on the screen
-    def draw_map(self):
-        self.screen.fill(self.colors['black'])
+    def draw_map(self, color_BG = 'black', color_obs = 'red'):
+        self.screen.fill(self.colors[color_BG])
         for obs in self.obstacles['circle']:
             pygame.draw.circle(self.screen, self.colors['red'], obs, 20)
         for x,y,w,h in self.obstacles['rectangle']:
-            pygame.draw.rect(self.screen, self.colors['red'], pygame.Rect(x - w/2, y - h/2,w,h))
+            pygame.draw.rect(self.screen, self.colors[color_obs], pygame.Rect(x - w/2, y - h/2,w,h))
         
         if self.debugging:
             for point_set in self.intersections:
@@ -185,13 +184,9 @@ class Environment():
         
     #     print(inside_camera_x)
     #     for i in range(len(box_limits)):
-    #         print(len(box_limits))
-            
+    #         print(len(box_limits))          
 
     #     # print(type(camera_x_indices))
-
-        
-
 
     #     # self.camera_x_global=agent_pos[np.newaxis,:,:][camera_x_indices]
     #     # self.camera_x_local=local_points_camera_1[camera_x_indices]
@@ -201,38 +196,60 @@ class Environment():
     #####################################################################
     
     #save camera images
-    def save_camera_image(self, frame_sizes ,frame_corners, index):
-        import os
+    def save_camera_image(self, frame_sizes ,frame_corners, index, train_len, val_len, test_len, buffer = 500):
+
+        train_buffer = buffer
+        val_buffer = buffer + train_buffer + train_len
+        test_buffer = buffer + val_buffer + val_len
+
+        if index >= train_buffer and index  < train_buffer + train_len:
+            data_type = 'train'
+            reset_counter = buffer
+        elif index >= val_buffer and index  < val_buffer + val_len:
+            data_type = 'val'
+            reset_counter = val_buffer
+        elif index >= test_buffer and index  < test_buffer + test_len:
+            data_type = 'test'
+            reset_counter = test_buffer
+        else:
+            data_type = None # stop saving
 
         t_l,t_r,b_l,b_r = frame_corners # unpacking corners for all frames
 
-        main_path = "C:/Users/shash/OneDrive/Desktop/SSTA_2/simSSTA/"
-        branched_path = main_path + "test_dataset_" 
+        main_path = "C:/Users/shash/OneDrive/Desktop/SSTA_2/simSSTA/dataset/"
 
-        for idx in range(len(frame_sizes)): #iterating for each box
-            if not os.path.exists(branched_path + str(idx)):
-                os.makedirs(branched_path + str(idx))
-
-
-        for idx in range(len(frame_sizes)): #iterating for each box
-            width, height = frame_sizes[idx], frame_sizes[idx] 
-            tl,tr,bl,br = t_l[idx],t_r[idx],b_l[idx],b_r[idx]
-
-            screen_array = pygame.surfarray.array3d(self.screen)
-            transposed_array = np.transpose(screen_array, (1, 0, 2))
-            pt1=np.float32([tl,tr,bl,br])
-            pt2=np.float32([[0,0],[width,0],[0,height],[width,height]])
-            matrix = cv2.getPerspectiveTransform(pt1,pt2)
-            output = cv2.warpPerspective(transposed_array,matrix,(width, height))
-            # print(idx)
+        if data_type != None:
+            branched_path = main_path + data_type
+            for idx in range(len(frame_sizes)): #iterating for each box
+                import os
+                path = branched_path + "/camera_" + str(idx) 
+                if not os.path.exists(path):
+                    os.makedirs(path)
+        
+        if index >= 500 and data_type != None:
             
-            save_image_name = branched_path  + str(idx)+ "/image_" + str(index) + ".jpg"
-            # print(save_image_name)
+            index = index - reset_counter
+            if index%100 == 0:
+                print("current image ("+data_type+"): ", index)
 
-            # cv2.imshow('image',output)
-            # cv2.waitKey(50000)
-            if not cv2.imwrite(save_image_name, output):
-                raise Exception("Could not write image")
+            for idx in range(len(frame_sizes)): #iterating for each box
+                width, height = frame_sizes[idx], frame_sizes[idx] 
+                tl,tr,bl,br = t_l[idx],t_r[idx],b_l[idx],b_r[idx]
+
+                screen_array = pygame.surfarray.array3d(self.screen)
+                transposed_array = np.transpose(screen_array, (1, 0, 2))
+                pt1=np.float32([tl,tr,bl,br])
+                pt2=np.float32([[0,0],[width,0],[0,height],[width,height]])
+                matrix = cv2.getPerspectiveTransform(pt1,pt2)
+                output = cv2.warpPerspective(transposed_array,matrix,(width, height))
+                # print(idx)
+                
+                save_image_name = branched_path + "/camera_" + str(idx)  + "/image_" + str(index) + ".jpg"
+                # print(save_image_name)
+                # cv2.imshow('image',output)
+                # cv2.waitKey(50000)
+                if not cv2.imwrite(save_image_name, output):
+                    raise Exception("Could not write image")
             
 
     #save camera data in csv file
