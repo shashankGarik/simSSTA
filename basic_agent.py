@@ -7,7 +7,7 @@ from loop_agents import *
 from Environment import Environment
 
 class CarSimulation(Environment):
-    def __init__(self, start_vec, goal_vec, obstacle_vec, controller,new_agents):
+    def __init__(self, start_vec, goal_vec, obstacle_vec, controller):
         super().__init__(800, 800, obstacle_vec)
         # Initialize Pygame necessary for initialising the simulation window and graphics
         print('Initializing Agents')
@@ -16,7 +16,7 @@ class CarSimulation(Environment):
         pygame.display.set_caption("Car Simulation")#Windows heading
 
         self.debugging = False
-        self.save_data = False
+        self.save_data = True
 
         # Set up car and goal positions
         self.car_pos = start_vec
@@ -31,7 +31,7 @@ class CarSimulation(Environment):
         self.control.dt = 1/self.frame_rate
         self.infinity = LoopSimulation(800,800,120,1,1)
         
-        self.control.create_agents(new_agents)
+        # self.control.create_agents(new_agents)
         self.timer=0
         self.car_pos = self.control.x
         self.goal_pos = self.control.goal_pos
@@ -102,7 +102,7 @@ class CarSimulation(Environment):
 
 if __name__ == "__main__":
    
-    start = np.array([[-50.0, 300.0, 0.0, 0.0],[-30.0, 50.0, 0.0, 0.0]])
+    start = np.array([[-50.0, 300.0, 0.0, 0.0,1],[-30.0, 50.0, 0.0, 0.0,1]])
     goal = np.array([[800, 1500],[700, 1600]])   
     obs = {'circle': np.array([]),
        'rectangle': np.array([[500,500,30,30],
@@ -115,5 +115,6 @@ if __name__ == "__main__":
                               [700,500,30,30],
                               [500,700,30,30]])}
 
-    simulation = CarSimulation(start, goal, obs, DoubleIntegrator,new_agents)
+
+    simulation = CarSimulation(start, goal, obs, DoubleIntegrator)
     simulation.run_simulation()

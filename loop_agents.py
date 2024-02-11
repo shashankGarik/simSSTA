@@ -131,7 +131,7 @@ class LoopSimulation:
 
         n=self.probability_agent_spawning(p,n)
         sample_n=n*2
-        start_points_res,goal_points_res=np.empty((0, 4)),np.empty((0, 2))
+        # start_points_res,goal_points_res=np.empty((0, 4)),np.empty((0, 2))
         while(n!=0):
             
             AgentR = ["R","L","U","D"]
@@ -178,6 +178,10 @@ class LoopSimulation:
                 goal_points[condition_goal,0]=x_goal
                 goal_points[condition_goal,1]=y_goal
 
+            color_vec = np.random.randint(0,6,size=(start_points.shape[0],1))
+            start_points = np.hstack([start_points,color_vec])
+            # print(start_points[0])
+
             start_points,goal_points,sample_n=self.check_spawning_overlap(start_points,goal_points)
             # print("ahm",start_points.shape,goal_points.shape,"sample",sample_n,"n",n)
             if sample_n>n:
@@ -191,31 +195,3 @@ class LoopSimulation:
             # print(n,sample_n)
         return start_points,goal_points
     
-
-# if __name__ == "__main__":
-infinity = LoopSimulation(1000,1000,200,1,1)
-start = np.array([[-50.0, 300.0, 0.0, 0.0],[-30.0, 50.0, 0.0, 0.0]])
-goal = np.array([[800, 1500],[700, 1600]]) 
-new_agents=infinity.run_simulation(start,goal)
-
-
-
-            
-
-
-
-
-
-
-            
-
-
-            
-
-        
-
-
-
-
-
-

@@ -58,14 +58,15 @@ class DoubleIntegrator:
         goal_close_idx = np.argwhere(self.dist2goal <= 100)
         goal_reached_idx=np.argwhere(self.dist2goal <= 5.0)
 
-        v_error = 5-self.x[:,2:]
+        v_error = 5-self.x[:,2:4]
 
-        prop_potential = np.zeros((self.x.shape[0],2))
-        diff_potential = np.zeros((self.x.shape[0],2))
+        prop_potential = np.zeros((self.x[:,:4].shape[0],2))
+        diff_potential = np.zeros((self.x[:,:4].shape[0],2))
+
         agent_potential,agent_distance = DoubleIntegrator.avoid_agents(90, 60000, self.x)#100000
-
         prop_potential = np.squeeze(np.dot(self.Kp_1[np.newaxis, :,:], error[:,:,np.newaxis])).T
         prop_potential = self.desired_force(1000)
+
         diff_potential = np.squeeze(np.dot(self.Kd_1[np.newaxis,:,:], v_error[:,:,np.newaxis])).T
 
         if len(goal_close_idx) > 0:
@@ -75,7 +76,7 @@ class DoubleIntegrator:
 
         control_input = prop_potential + diff_potential + obstacle_potential + agent_potential
 
-        A_x = np.squeeze(np.dot(self.A[np.newaxis,:,:], self.x[:,:,np.newaxis]))
+        A_x = np.squeeze(np.dot(self.A[np.newaxis,:,:], self.x[:,:4,np.newaxis]))
         B_u = np.squeeze(np.dot(self.B[np.newaxis,:,:], control_input[:,:, np.newaxis]))
         v = (A_x + B_u).T
 
@@ -85,7 +86,11 @@ class DoubleIntegrator:
         self.agent_collision=np.array([False]*self.x.shape[0])
 
         v=self.collision_detection(v,agent_distance,rectangle_distance,circle_distance,goal_reached_idx)
-        self.x = self.x + self.dt * v
+        if self.x.shape[1] > 4:
+            self.x = np.hstack([self.x[:,:4] + self.dt * v,self.x[:,4:]])
+        else:
+            self.x = self.x[:,:4] + self.dt * v
+
         self.remove_agent_goal()
         self.frame_agents()
     

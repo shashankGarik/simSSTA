@@ -30,10 +30,19 @@ class Environment():
             'black': (0,0,0),
             'red':   (255,0,0),
             'green': (0,180,0),
-            'lgreen': (0,255,0),
+            'purple':(145,30,180),
+            'teal':(0,128,128),
+            'yellow': (255,225,25),
             'blue':  (0,0,255),
-            'lblue': (0,191,255)
+            'lgreen': (0,255,0),
+            'lblue': (0,191,255),
+            'glaucous':(96, 130, 182),
+            'indigo': (63, 0, 255),
+            'blueGray':(115, 147, 179),
+
         }
+
+        self.agent_colors = ['glaucous','teal','indigo','blue','blueGray','lblue']
 
         # Set up car and goal positions
         self.cur_pos = None
@@ -145,14 +154,14 @@ class Environment():
     def draw_map(self, color_BG = 'black', color_obs = 'red'):
         self.screen.fill(self.colors[color_BG])
         for obs in self.obstacles['circle']:
-            pygame.draw.circle(self.screen, self.colors['red'], obs, 20)
+            pygame.draw.circle(self.screen, self.colors[color_obs], obs, 20)
         for x,y,w,h in self.obstacles['rectangle']:
             pygame.draw.rect(self.screen, self.colors[color_obs], pygame.Rect(x - w/2, y - h/2,w,h))
         
         if self.debugging:
             for point_set in self.intersections:
                 for x, y in point_set:
-                    pygame.draw.circle(self.screen, self.colors['white'], (x, y), 3)
+                    pygame.draw.circle(self.screen, self.colors[color_BG], (x, y), 3)
 
     def plot_segment_frame(self,center,box_points):
         # print(center)
@@ -161,17 +170,18 @@ class Environment():
         # frames = np.array([[center, box_points]])
 
         for i, row in enumerate(center.T):
-            pygame.draw.polygon(self.screen, self.colors['white'], box_points[i,:],3)
+            pygame.draw.polygon(self.screen, self.colors['black'], box_points[i,:],3)
             if self.debugging == True:
                 pygame.draw.circle(self.screen, self.colors['red'], row, 3)
 
     def draw_agents_with_goals(self, collision_flag):
         for start, goal, collided in zip(self.cur_pos, self.goal_pos, collision_flag):
             if collided == False:
-                agent_color = self.colors["blue"]
+                agent_color = self.colors[self.agent_colors[int(start[4])]]
             else:
-                agent_color = self.colors["lgreen"]
-            pygame.draw.circle(self.screen, self.colors['white'], goal, 2)
+                agent_color = self.colors["red"]
+            if self.debugging:
+                pygame.draw.circle(self.screen, self.colors['white'], goal, 2)
             pygame.draw.circle(self.screen, agent_color, start[:2], 10)
 
     ############### NEEDS TO BE FIXED: NOT A PRIORITY #################
@@ -226,7 +236,7 @@ class Environment():
                 if not os.path.exists(path):
                     os.makedirs(path)
         
-        if index >= 500 and data_type != None:
+        if index >= buffer and data_type != None:
             
             index = index - reset_counter
             if index%100 == 0:
@@ -245,6 +255,7 @@ class Environment():
                 # print(idx)
                 
                 save_image_name = branched_path + "/camera_" + str(idx)  + "/image_" + str(index) + ".jpg"
+                output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
                 # print(save_image_name)
                 # cv2.imshow('image',output)
                 # cv2.waitKey(50000)
