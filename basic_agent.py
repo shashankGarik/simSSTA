@@ -15,8 +15,8 @@ class CarSimulation(Environment):
 
         pygame.display.set_caption("Car Simulation")#Windows heading
 
-        self.debugging = False
-        self.save_data = True
+        self.debugging = True
+        self.save_data = False
 
         # Set up car and goal positions
         self.car_pos = start_vec
@@ -78,7 +78,9 @@ class CarSimulation(Environment):
             # plotting the segment
             #local points of all self.x
             global_points=self.control.x[:,:2]
-            local_points = self.global_local_transform(global_points,t_l,self.frame_angle, )
+            local_points = self.global_local_transform(global_points,t_l,self.frame_angle)
+            camera_x_local,camera_x_global=self.camera_agents(local_points,side_length, self.control.x) #####uncomment
+
             
             if self.debugging:
                 self.plot_segment_frame(centers,(t_l,t_r,b_l,b_r))
@@ -86,10 +88,10 @@ class CarSimulation(Environment):
             if self.save_data:
                 
                 #getting the agents in the frame
-                # camera_x_local,camera_x_global=self.camera_agents(local_points,side_length, self.control.x) #####uncomment
                 # print(camera_x_local,len(camera_x_local))
                 #saving camera1 dataset
-                self.save_camera_image(side_length,(t_l,t_r,b_l,b_r),self.timer, 6000, 1500, 1500)
+                buffer = 500
+                self.save_camera_image(side_length,(t_l,t_r,b_l,b_r),self.timer, 6000, 1500, 1500, 500)
                 #saving camera csv file
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
 
