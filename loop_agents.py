@@ -38,11 +38,12 @@ class LoopSimulation:
             np.random.seed(seed)
             random.seed(seed)
 
-    def run_simulation(self,old_agents_start=None,old_agents_goal=None):
 
+    def run_simulation(self,old_agents_start=None,old_agents_goal=None):#(takes in only global goal not local goal)
         self.old_agents_start=old_agents_start
         self.old_agents_goal=old_agents_goal
         start_points,goal_points=self.create_agents(1, 50)
+        goal_points=np.hstack([goal_points,np.full((goal_points.shape[0],2),None)])
         new_agents = {"start": start_points, "goal" :goal_points}
         return new_agents
     
@@ -76,7 +77,6 @@ class LoopSimulation:
             start_start_dist = np.linalg.norm(start_start_diff, axis = 2)[:,:,np.newaxis] + (1e-6)
             start_goal_diff = start_points[:,:2][:,np.newaxis] - self.old_agents_goal[np.newaxis,:,:]
             start_goal_dist = np.linalg.norm(start_goal_diff, axis = 2)[:,:,np.newaxis] + (1e-6)
-
             new_start_new_start_diff=start_points[:,:2][:,np.newaxis] - start_points[:,:2][np.newaxis,:,:]
             new_start_new_start_dist = np.linalg.norm(new_start_new_start_diff, axis = 2)[:,:,np.newaxis] + (1e-6)
 
@@ -187,11 +187,10 @@ class LoopSimulation:
             radius_prob = [0.5, 0.175, 0.125, 0.10, 0.10]         
 
             radius_vec = np.random.choice(radius_choice, p = radius_prob, size=(start_points.shape[0],1))
-            start_points = np.hstack([start_points,color_vec, radius_vec])
-            
-            # print(start_points[0])
-
+            start_points = np.hstack([start_points,color_vec, radius_vec,np.zeros((start_points.shape[0],1))])
+        
             start_points,goal_points,sample_n=self.check_spawning_overlap(start_points,goal_points)
+            
             # print("ahm",start_points.shape,goal_points.shape,"sample",sample_n,"n",n)
             if sample_n>n:
                 start_points=start_points[:n]
