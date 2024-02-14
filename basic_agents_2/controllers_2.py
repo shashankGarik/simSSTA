@@ -74,8 +74,8 @@ class DoubleIntegrator:
             if type(obstacle_potential) == np.ndarray:
                 obstacle_potential[goal_close_idx] = np.array([0.0,0.0])
 
-        control_input = prop_potential + diff_potential + obstacle_potential + agent_potential
-     
+        # control_input = prop_potential + diff_potential + obstacle_potential + agent_potential
+        control_input = prop_potential + diff_potential 
 
         A_x = np.squeeze(np.dot(self.A[np.newaxis,:,:], self.x[:,:4,np.newaxis]))
         B_u = np.squeeze(np.dot(self.B[np.newaxis,:,:], control_input[:,:, np.newaxis]))

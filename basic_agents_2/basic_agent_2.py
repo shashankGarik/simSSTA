@@ -1,10 +1,10 @@
 
 import pygame
 import numpy as np
-from controllers import *
-# from test_cases import *
-from loop_agents import *
-from Environment import Environment
+from controllers_2 import *
+from loop_agents_2 import *
+from Environment_2 import Environment
+
 
 class CarSimulation(Environment):
     def __init__(self, start_vec, goal_vec, obstacle_vec, controller):
@@ -17,7 +17,7 @@ class CarSimulation(Environment):
 
         self.debugging = True
         self.save_data = False
-        self.spawn_random_agents=False
+        self.spawn_random_agents=True
 
         # Set up car and goal positions
         self.car_pos = start_vec
@@ -47,55 +47,46 @@ class CarSimulation(Environment):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-
-           # Update car position
+            # print(len(self.car_pos))
+            self.car_pos,self.goal_pos = self.control.car_pos()
+            self.update_poses(self.car_pos, self.goal_pos)
+            self.draw_map('white') # draws map with obstacles
+            
+            self.draw_agents_with_goals(self.control.agent_collision) # draws agents and their respective goal positions
             if self.timer%100==0 and self.spawn_random_agents:
                 new_agents=self.infinity.run_simulation(self.car_pos,self.goal_pos)
                 self.control.create_agents(new_agents)
                 self.car_pos = self.control.x
                 self.goal_pos = self.control.goal_pos
 
-            print(len(self.car_pos))
-            self.car_pos,self.goal_pos = self.control.car_pos()
-            self.update_poses(self.car_pos, self.goal_pos)
-            self.intersections=self.control.intersection()
-            self.draw_map('white') # draws map with obstacles
-            
-            self.draw_agents_with_goals(self.control.agent_collision) # draws agents and their respective goal positions
-            speed=self.control.traffic_speed()
-            collision_rate,total_time=self.control.collison_rate()
-            capacity,volume=self.control.volume_capacity()
            
-            #metrics
-            if self.debugging == True:
-                self.display_collision_rate(collision_rate)
-                self.display_total_time(total_time)
-                self.display_v_c_ratio(volume,capacity)
-                self.display_traffic_speed(speed)
+           
 
             # setting the segment
-            twin_boxes = np.array([[-60,300,400,300],[-60,450,50,300]])
+            twin_boxes = np.array([[0,50,100,600]])
             self.frame_angle,centers,(t_l,t_r,b_l,b_r)=self.segment_frame(twin_boxes)
+            side_length = twin_boxes[:,-1]
 
             side_length = twin_boxes[:,-1]
             # plotting the segment
             #local points of all self.x
             global_points=self.control.x[:,:2]
             local_points = self.global_local_transform(global_points,t_l,self.frame_angle)
-      
+
+
+            local_agent_points, global_agent_points,global_goal_points=self.camera_agents(local_points,side_length, self.control.x,self.goal_pos)
+          
+           
+            ######## Obtain local_goal from global_goal
+            local_goal_points=self.global_local_goal(global_agent_points,global_goal_points,(t_l,t_r,b_l,b_r))
+            print("ppppppppppppppppppppppppppppppppppppppp---",b_l,b_r)
+            print("--------------------------------------local_goal_points",local_goal_points)
+            self.test_intersection(local_goal_points)
+            ###############
+            
             if self.debugging:
                 self.plot_segment_frame(centers,(t_l,t_r,b_l,b_r))
 
-            if self.save_data:
-                pass
-                
-                #getting the agents in the frame
-                # camera_x_local,camera_x_global=self.camera_agents(local_points,side_length, self.control.x) #####uncomment
-                # print(camera_x_local,len(camera_x_local))
-                #saving camera1 dataset
-                self.save_camera_image(side_length,(t_l,t_r,b_l,b_r),self.timer, 6000, 1500, 1500)
-                #saving camera csv file
-                # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
 
             pygame.display.update()
             self.clock.tick(self.frame_rate)
@@ -107,18 +98,12 @@ class CarSimulation(Environment):
 if __name__ == "__main__":
     np.random.seed(42)
    
-    start = np.array([[400.0, 400.0, 0.0, 0.0,1]])
-    goal = np.array([[700, 550]])   
+    start = np.array([[100.0, 400.0, 0.0, 0.0,1],[120.0, 400.0, 0.0, 0.0,1],[-50.0, 400.0, 0.0, 0.0,1],[0.0, 700.0, 0.0, 0.0,2]])
+    goal = np.array([[700, 100],[700,500],[700,400],[700,700]]) 
+    # start = np.array([[100.0, 400.0, 0.0, 0.0,1]])
+    # goal = np.array([[700, 100]])   
     obs = {'circle': np.array([]),
-       'rectangle': np.array([[500,500,30,30],
-                              [700,700,30,30],
-                              [300,300,30,30],
-                              [700,300,30,30],
-                              [300,700,30,30],
-                              [300,500,30,30],
-                              [500,300,30,30],
-                              [700,500,30,30],
-                              [500,700,30,30]])}
+       'rectangle': np.array([])}
 
 
     simulation = CarSimulation(start, goal, obs, DoubleIntegrator)

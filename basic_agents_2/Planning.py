@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import math,cv2
 # from PIL import Image, ImageDraw
-from controllers import *
-from test_cases import *
+from controllers_2 import *
+
 
 
 class Environment():
@@ -120,35 +120,25 @@ class Environment():
         local_points = homogeneous_local_points[:,:, :2]
         return local_points
     
-    ################ Display Metrics ########################
-    def display_collision_rate(self,collision_value):
-        collison_text ="CR="+str(np.round(collision_value*60,0))+"coll/min"
-        collison_render = self.font.render(collison_text, True, (255, 255, 255))
-        col_rect = collison_render.get_rect()
-        col_rect.topright = ( self.width-100, 30) 
-        self.screen.blit(collison_render, col_rect)
+    def camera_agents(self,local_points_camera_1,box_limits, agent_pos,goal_pos):
+        self.camera_x_local, self.camera_x_global = 0,0
+        min_x_1,max_x_1,min_y_1,max_y_1=(np.zeros(box_limits.shape)[:,np.newaxis], box_limits[:,np.newaxis], np.zeros(box_limits.shape)[:,np.newaxis], box_limits[:,np.newaxis])
+        x_row_1,y_row_1=local_points_camera_1[:,:,0],local_points_camera_1[:,:,1]
+        inside_camera_x = np.logical_and(x_row_1 >= min_x_1, x_row_1 <= max_x_1) & np.logical_and(y_row_1 >= min_y_1, y_row_1 <= max_y_1)
+        
+        global_agent_points = []
+        local_points = []
+        global_goal_points=[]
 
-    def display_total_time  (self,time):
-        time_text ="t="+str(np.round(time,0))+"s"
-        time_render = self.font.render(time_text, True, (255, 255, 255))
-        self.col_rect = time_render.get_rect()
-        self.col_rect.topright = ( self.width-100, 10) 
-        self.screen.blit(time_render, self.col_rect)
-    
-    def display_v_c_ratio(self,volume,capacity):
-        v_c_text ="v/c="+str(  np.round(volume/capacity,2))
-        v_c_render = self.font.render(v_c_text, True, (255, 255, 255))
-        self.v_c_rect = v_c_render.get_rect()
-        self.v_c_rect.topright = ( self.width-100, 50) 
-        self.screen.blit(v_c_render, self.v_c_rect )
+        for i in range(len(box_limits)):
+            camera_x_indices=np.where(inside_camera_x[i])
+            global_agent_points.append(agent_pos[camera_x_indices])
+            global_goal_points.append(goal_pos[camera_x_indices])
+            local_points.append(local_points_camera_1[i][camera_x_indices])
 
-    def display_traffic_speed(self,speed):
-        speed_text ="v="+str(  np.round(speed,0))+"m/s"
-        speed_render = self.font.render(speed_text, True, (255, 255, 255))
-        speed_rect = speed_render.get_rect()
-        speed_rect.topright = (self.width-100, 70)
-        self.screen.blit(speed_render, speed_rect)
-    ################ Metrics ########################
+        return  local_points,global_agent_points,global_goal_points
+        
+
     
     #plotting on the screen
     def draw_map(self, color_BG = 'black', color_obs = 'red'):
@@ -157,11 +147,13 @@ class Environment():
             pygame.draw.circle(self.screen, self.colors[color_obs], obs, 20)
         for x,y,w,h in self.obstacles['rectangle']:
             pygame.draw.rect(self.screen, self.colors[color_obs], pygame.Rect(x - w/2, y - h/2,w,h))
-        
-        if self.debugging:
-            for point_set in self.intersections:
-                for x, y in point_set:
-                    pygame.draw.circle(self.screen, self.colors[color_BG], (x, y), 3)
+
+    def test_intersection(self,intersections):
+            for point_set in intersections:
+                
+                x, y =point_set[0],point_set[1]
+                print(x,y)
+                pygame.draw.circle(self.screen, self.colors["blue"], (x, y), 10)
 
     def plot_segment_frame(self,center,box_points):
         # print(center)
@@ -184,37 +176,67 @@ class Environment():
                 pygame.draw.circle(self.screen, self.colors['white'], goal, 2)
             pygame.draw.circle(self.screen, agent_color, start[:2], 10)
 
-    ############### NEEDS TO BE FIXED: NOT A PRIORITY #################
-            
-    # def camera_agents(self,local_points_camera_1,box_limits, agent_pos):
-        
-    #     min_x_1,max_x_1,min_y_1,max_y_1=(np.zeros(box_limits.shape)[:,np.newaxis], box_limits[:,np.newaxis], np.zeros(box_limits.shape)[:,np.newaxis], box_limits[:,np.newaxis])
-    #     x_row_1,y_row_1=local_points_camera_1[:,:,0],local_points_camera_1[:,:,1]
-    #     inside_camera_x = np.logical_and(x_row_1 >= min_x_1, x_row_1 <= max_x_1) & np.logical_and(y_row_1 >= min_y_1, y_row_1 <= max_y_1)
-        
-    #     print(inside_camera_x)
-    #     for i in range(len(box_limits)):
-    #         print(len(box_limits))          
+    ################### finding local goal direct projection ##########
+    def line_intersection(self,p1, p2, p3, p4):
+        """Calculate intersection of two lines (p1, p2) and (p3, p4)."""
+        denominator = (p2[0] - p1[0]) * (p4[1] - p3[1]) - (p4[0] - p3[0]) * (p2[1] - p1[1])
+        print("den",denominator)
+        if denominator == 0:
+            return None  # Parallel lines
+        a = p1[1] - p3[1]
+        b = p1[0] - p3[0]
+        numerator1 = (p4[0] - p3[0]) * a - (p4[1] - p3[1]) * b
+        numerator2 = (p2[0] - p1[0]) * a - (p2[1] - p1[1]) * b
+        print("num",a,b,numerator1,numerator2)
+        ua = numerator1 / denominator
+        ub = numerator2 / denominator
+        print("ua,ub",ua,ub)
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        if 0 <= ua <= 1 and 0 <= ub <= 1:
+            return [p1[0] + ua * (p2[0] - p1[0]), p1[1] + ua * (p2[1] - p1[1])]
+        return None
 
-    #     print(type(camera_x_indices))
+    def find_segment_square_intersection(self,segment, square):
+        """Find intersections between a line segment and a square."""
+        intersections = []
+        # Define square sides as segments
+        square_sides = [(square[0], square[1]), (square[1], square[2]),
+                        (square[2], square[3]), (square[3], square[0])]
+        # Check intersection with each side of the square
+        print("ppppppppppppppppppppp")
+        for side in square_sides:
+            print(side)
+            intersection = self.line_intersection(segment[0], segment[1], side[0], side[1])
+            if intersection:
+                intersections.append(intersection)
+        return intersections
 
-    #     self.camera_x_global=agent_pos[np.newaxis,:,:][camera_x_indices]
-    #     self.camera_x_local=local_points_camera_1[camera_x_indices]
-    #     print(len(self.camera_x_local))######uncoment later
-    #     return  self.camera_x_local,self.camera_x_global
-            
-    # def camera_agents(self,local_points_camera_1,box_limits):
-    #     min_x_1,max_x_1,min_y_1,max_y_1=box_limits[0]
-    #     x_row_1,y_row_1=local_points_camera_1[:,0],local_points_camera_1[:,1]
+   
 
-    #     inside_camera_x = np.logical_and(x_row_1 >= min_x_1, x_row_1 <= max_x_1) & np.logical_and(y_row_1 >= min_y_1, y_row_1 <= max_y_1)
-    #     camera_x_indices=np.where(inside_camera_x)
-    #     self.camera_x_global=self.x[camera_x_indices]
-    #     self.camera_x_local=local_points_camera_1[camera_x_indices]
-    #     print(len(self.camera_x_local))
-    #     return  self.camera_x_local,self.camera_x_global
-            
-    #####################################################################
+    
+    def global_local_goal(self,agents_global_points,goal_global_points,frame_edges):
+    
+        for view in range(len(agents_global_points)):
+            (t_l,t_r,b_l,b_r)=frame_edges
+            print(agents_global_points[view][:,:2])
+            print(goal_global_points[view])
+
+
+            segment = [agents_global_points[view][:,:2],goal_global_points[view] ]  # Line segment defined by its two end points
+            segment=[(100,400),(700,100)]
+            square = [(t_l[view][0],t_l[view][1]),(t_r[view][0],t_r[view][1]),(b_r[view][0],b_r[view][1]),(b_l[view][0],b_l[view][1])]  # Square defined by its four corners
+            # Find intersections
+            intersections = self.find_segment_square_intersection(segment, square)
+            print("Intersection Points:", intersections)
+            return intersections
+# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -X- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+
+
+
+
+ 
     
     #save camera images
     def save_camera_image(self, frame_sizes ,frame_corners, index, train_len, val_len, test_len, buffer = 500):

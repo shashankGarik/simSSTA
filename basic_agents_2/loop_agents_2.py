@@ -1,8 +1,8 @@
 import pygame
 import random
 import numpy as np
-from controllers import *
-from basic_agent import *
+from controllers_2 import *
+from basic_agent_2 import *
 from itertools import permutations
 np.random.seed(42)
 
