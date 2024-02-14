@@ -148,16 +148,16 @@ class Environment():
         for x,y,w,h in self.obstacles['rectangle']:
             pygame.draw.rect(self.screen, self.colors[color_obs], pygame.Rect(x - w/2, y - h/2,w,h))
 
-    def test_intersection(self,intersections):
-            print(intersections.shape)
-            if intersections.shape[1]==1:
-                pygame.draw.circle(self.screen, self.colors["blue"], (intersections[0], intersections[1]), 10)
-            else:
-                for point_set in intersections:
-                    print(point_set)
-                    x, y =point_set[0],point_set[1]
-                    print("hi",x,y)
-                    pygame.draw.circle(self.screen, self.colors["blue"], (x, y), 10)
+    # def test_intersection(self,intersections):
+    #         print(intersections.shape)
+    #         if intersections.shape[1]==1:
+    #             pygame.draw.circle(self.screen, self.colors["blue"], (intersections[0], intersections[1]), 10)
+    #         else:
+    #             for point_set in intersections:
+    #                 print(point_set)
+    #                 x, y =point_set[0],point_set[1]
+    #                 print("hi",x,y)
+    #                 pygame.draw.circle(self.screen, self.colors["blue"], (x, y), 10)
 
     def plot_segment_frame(self,center,box_points):
         # print(center)
@@ -194,20 +194,10 @@ class Environment():
         valid = (0 <= ua) & (ua <= 1) & (0 <= ub) & (ub <= 1)
         idx = np.where(valid)
         new_ua,new_ub=ua[idx],ub[idx]
-        intersection_matrix=np.full((p2.shape[0],2),None)
-        # print(result_matrix)
-        print( new_ua,new_ub)
-
-        # intersections = np.where(valid[:, None], p1 + ua[:, None] * (p2 - p1), None)
         intersection_x,intersection_y=[p1[:,0] + new_ua * (p2[:,0] - p1[:,0]), p1[:,1] + new_ua * (p2[:,1] - p1[:,1])]
         intersection_stack= np.vstack([intersection_x, intersection_y])
-        # intersection=np.array(intersection_stack)
-        print(intersection_stack.T)
+        # print(intersection_stack.T)
         return intersection_stack.T
-
-
- 
-
 
     def find_segment_square_intersection(self,segment, square):
         """Find intersections between a line segment and a square."""
@@ -215,37 +205,17 @@ class Environment():
         # Define square sides as segments
         square_sides = np.array([[square[0], square[1]], [square[1], square[2]],
                         [square[2], square[3]], [square[3], square[0]]])
-        print(square_sides.shape)
-        # Check intersection with each side of the square
-        print("ppppppppppppppppppppp")
-        intersections = self.line_intersection(segment[0], segment[1],square_sides )
-        print(intersections.shape)
-        intersections_with_nan = np.where(intersections == None, np.nan, intersections)
-        print(intersections)
-        # filtered_values = intersections_with_nan[~np.isnan(intersections_with_nan).any(axis=1)]
-
-        # print("inter",filtered_values)
-        #return an array of nX1X2 where each n is  achent and 1X2 is the intersection
-  
+        intersections = self.line_intersection(segment[0], segment[1],square_sides )   
         return intersections
 
-   
-
-    
     def global_local_goal(self,agents_global_points,goal_global_points,frame_edges):
-    
         for view in range(len(agents_global_points)):
             (t_l,t_r,b_l,b_r)=frame_edges
-            print(agents_global_points[view][:,:2])
-            print(goal_global_points[view])
-
-
             segment = [agents_global_points[view][:,:2],goal_global_points[view] ]  # Line segment defined by its two end points
-            # segment=[(100,400),(700,100)]
             square = [(t_l[view][0],t_l[view][1]),(t_r[view][0],t_r[view][1]),(b_r[view][0],b_r[view][1]),(b_l[view][0],b_l[view][1])]  # Square defined by its four corners
             # Find intersections
             intersections = self.find_segment_square_intersection(segment, square)
-            print("Intersection Points:", intersections)
+            # print("Intersection Points:", intersections)
             return intersections
 # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -X- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 

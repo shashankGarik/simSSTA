@@ -18,7 +18,6 @@ class CarSimulation(Environment):
         self.debugging = True
         self.save_data = False
         self.spawn_random_agents=True
-
         # Set up car and goal positions
         self.car_pos = start_vec
         self.goal_pos = goal_vec
@@ -26,7 +25,7 @@ class CarSimulation(Environment):
         self.obstacles = obstacle_vec
         self.controller = controller
         self.clock = pygame.time.Clock()
-        self.frame_rate= 80
+        self.frame_rate= 120
 
         self.control = self.controller(self.car_pos, self.goal_pos, self.obstacles)
         self.control.dt = 1/self.frame_rate
@@ -53,7 +52,7 @@ class CarSimulation(Environment):
             self.draw_map('white') # draws map with obstacles
             
             self.draw_agents_with_goals(self.control.agent_collision) # draws agents and their respective goal positions
-            if self.timer%100==0 and self.spawn_random_agents:
+            if self.timer%500==0 and self.spawn_random_agents:
                 new_agents=self.infinity.run_simulation(self.car_pos,self.goal_pos)
                 self.control.create_agents(new_agents)
                 self.car_pos = self.control.x
@@ -79,9 +78,9 @@ class CarSimulation(Environment):
            
             ######## Obtain local_goal from global_goal
             local_goal_points=self.global_local_goal(global_agent_points,global_goal_points,(t_l,t_r,b_l,b_r))
-            print("ppppppppppppppppppppppppppppppppppppppp---",b_l,b_r)
-            print("--------------------------------------local_goal_points",local_goal_points)
-            self.test_intersection(local_goal_points)
+            # print("ppppppppppppppppppppppppppppppppppppppp---",b_l,b_r)
+            # print("--------------------------------------local_goal_points",local_goal_points)
+            # self.test_intersection(local_goal_points)
             ###############
             
             if self.debugging:
