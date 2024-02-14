@@ -6,7 +6,7 @@ from basic_agent import *
 from itertools import permutations
 
 class LoopSimulation:
-    def __init__(self, frame_h, frame_w, dist2GE_min, obs, controller):
+    def __init__(self, frame_h, frame_w, dist2GE_min, obs, controller, seed = None):
         """
         Initializes simulation that ends after some time period
 
@@ -34,6 +34,10 @@ class LoopSimulation:
         self.frame_rate = 60
 
         self.agents = {"start" : [], "goal" : []}
+        if not seed == None:
+            np.random.seed(seed)
+            random.seed(seed)
+
 
     def run_simulation(self,old_agents_start=None,old_agents_goal=None):#(takes in only global goal not local goal)
         self.old_agents_start=old_agents_start
@@ -128,7 +132,6 @@ class LoopSimulation:
             start (np.ndarray): start vector for agents.
             goal (np.ndarray)
         """
-
         n=self.probability_agent_spawning(p,n)
         sample_n=n*2
         # start_points_res,goal_points_res=np.empty((0, 4)),np.empty((0, 2))

@@ -24,11 +24,11 @@ class CarSimulation(Environment):
         self.obstacles = obstacle_vec
         self.controller = controller
         self.clock = pygame.time.Clock()
-        self.frame_rate= 60
+        self.frame_rate= 120
 
         self.control = self.controller(self.car_pos, self.goal_pos, self.obstacles)
         self.control.dt = 1/self.frame_rate
-        self.infinity = LoopSimulation(800,800,120,1,1)
+        self.infinity = LoopSimulation(800,800,120,1,1,42)
         
         # self.control.create_agents(new_agents)
         self.timer=0
