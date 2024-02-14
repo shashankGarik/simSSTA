@@ -48,11 +48,13 @@ class CarSimulation(Environment):
 
            # Update car position
             if self.timer%100==0:
-                new_agents=self.infinity.run_simulation(self.car_pos,self.goal_pos)
+                new_agents=self.infinity.run_simulation(self.car_pos,(self.goal_pos[:,:2]).astype(np.int32))# important that goal points passed in must be global and of int 32
                 self.control.create_agents(new_agents)
                 self.car_pos = self.control.x
                 self.goal_pos = self.control.goal_pos
+            
 
+            # print(self.car_pos)
             self.car_pos,self.goal_pos = self.control.car_pos()
             self.update_poses(self.car_pos, self.goal_pos)
             self.intersections=self.control.intersection()
@@ -102,11 +104,10 @@ class CarSimulation(Environment):
 
 if __name__ == "__main__":
    
-    start = np.array([[-50.0, 300.0, 0.0, 0.0, 1, 15],[-30.0, 50.0, 0.0, 0.0,1, 15]])
-    goal = np.array([[800, 1500],[700, 1600]])   
-
-    # start = np.array([])
-    # goal = np.array([])
+    start = np.array([[-50.0, 300.0, 0.0, 0.0, 1, 15, 0],[-30.0, 50.0, 0.0, 0.0,1, 15,0]])# startx,starty,vx,vy,colour,radius,type(agent)
+    # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal,y,local_goal_x(intersection_x),local_goal_y(intersection_y)
+    goal = np.array([[800, 1500,None,None],[700, 1600,None,None]]) # the new one is an object
+  
     obs = {'circle': np.array([]),
        'rectangle': np.array([[500,500,30,30],
                               [700,700,30,30],

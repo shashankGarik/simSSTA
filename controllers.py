@@ -52,7 +52,7 @@ class DoubleIntegrator:
             r_obstacle_potential,rectangle_distance,self.intersections = DoubleIntegrator.avoid_rectangle(80, 80000, self.obs_rectangle, self.x)
             obstacle_potential=r_obstacle_potential+obstacle_potential
 
-        error = self.goal_pos - self.x[:,:2]
+        error = ((self.goal_pos[:,:2]).astype(np.int32)) - self.x[:,:2]
         self.dist2goal = np.linalg.norm(error, axis = 1)
     
         goal_close_idx = np.argwhere(self.dist2goal <= 100)
@@ -168,7 +168,7 @@ class DoubleIntegrator:
         return v
     
     def desired_force(self, strength):
-        error = self.goal_pos - self.x[:,:2]
+        error = (self.goal_pos[:,:2].astype(np.int32)) - self.x[:,:2]
         dist2goal = np.linalg.norm(error, axis = 1)
         dir = error/dist2goal[:, np.newaxis]
         return dir*strength
