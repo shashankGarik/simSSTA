@@ -1,4 +1,3 @@
-
 import pygame
 import numpy as np
 from controllers import *
@@ -15,13 +14,13 @@ class CarSimulation(Environment):
 
         pygame.display.set_caption("Car Simulation")#Windows heading
 
-        self.debugging = True
+        self.debugging = False
         self.save_data = False
 
         # Set up car and goal positions
         self.car_pos = start_vec
         self.goal_pos = goal_vec
-        self.update_poses(start_vec, goal_vec)
+        # self.update_poses(start_vec, goal_vec)
         self.obstacles = obstacle_vec
         self.controller = controller
         self.clock = pygame.time.Clock()
@@ -33,8 +32,8 @@ class CarSimulation(Environment):
         
         # self.control.create_agents(new_agents)
         self.timer=0
-        self.car_pos = self.control.x
-        self.goal_pos = self.control.goal_pos
+        # self.car_pos = self.control.x
+        # self.goal_pos = self.control.goal_pos
     
 
     def run_simulation(self):
@@ -57,7 +56,7 @@ class CarSimulation(Environment):
             self.car_pos,self.goal_pos = self.control.car_pos()
             self.update_poses(self.car_pos, self.goal_pos)
             self.intersections=self.control.intersection()
-            self.draw_map('white') # draws map with obstacles
+            self.draw_map() # draws map with obstacles
             
             self.draw_agents_with_goals(self.control.agent_collision) # draws agents and their respective goal positions
             speed=self.control.traffic_speed()
@@ -82,15 +81,14 @@ class CarSimulation(Environment):
             camera_x_local,camera_x_global=self.camera_agents(local_points,side_length, self.control.x) #####uncomment
 
             
-            if self.debugging:
-                self.plot_segment_frame(centers,(t_l,t_r,b_l,b_r))
+            # if self.debugging:
+            self.plot_segment_frame(centers,(t_l,t_r,b_l,b_r))
 
             if self.save_data:
                 
                 #getting the agents in the frame
                 # print(camera_x_local,len(camera_x_local))
                 #saving camera1 dataset
-                buffer = 500
                 self.save_camera_image(side_length,(t_l,t_r,b_l,b_r),self.timer, 6000, 1500, 1500, 500)
                 #saving camera csv file
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
@@ -104,8 +102,11 @@ class CarSimulation(Environment):
 
 if __name__ == "__main__":
    
-    start = np.array([[-50.0, 300.0, 0.0, 0.0,1],[-30.0, 50.0, 0.0, 0.0,1]])
+    start = np.array([[-50.0, 300.0, 0.0, 0.0, 1, 15],[-30.0, 50.0, 0.0, 0.0,1, 15]])
     goal = np.array([[800, 1500],[700, 1600]])   
+
+    # start = np.array([])
+    # goal = np.array([])
     obs = {'circle': np.array([]),
        'rectangle': np.array([[500,500,30,30],
                               [700,700,30,30],

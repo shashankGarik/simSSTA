@@ -30,8 +30,8 @@ class DoubleIntegrator:
                            [0, 1]])
         
         # proportional gains
-        self.Kp_1= np.array([[2.0, 0],
-                             [0, 2.0]])
+        self.Kp_1= np.array([[0.8, 0],
+                             [0, 0.8]])
         
         # derivative gains
         self.Kd_1 = np.array([[10, 0],
@@ -63,7 +63,7 @@ class DoubleIntegrator:
         prop_potential = np.zeros((self.x[:,:4].shape[0],2))
         diff_potential = np.zeros((self.x[:,:4].shape[0],2))
 
-        agent_potential,agent_distance = DoubleIntegrator.avoid_agents(90, 60000, self.x)#100000
+        agent_potential,agent_distance = DoubleIntegrator.avoid_agents(9, 60000, self.x)#100000
         prop_potential = np.squeeze(np.dot(self.Kp_1[np.newaxis, :,:], error[:,:,np.newaxis])).T
         prop_potential = self.desired_force(1000)
 
@@ -212,7 +212,7 @@ class DoubleIntegrator:
         obstacle_potential = np.sum(dir*mag*strength, axis = 0)
         return obstacle_potential,dist,intersections
     
-    def avoid_agents(radii, strength, x_c):
+    def avoid_agents(m_factor, strength, x_c):
         """
         Calculates the potential for all agents with respect to other agents
 
@@ -227,6 +227,10 @@ class DoubleIntegrator:
             np.ndarray: combined resulting potential of obstacles for each agent of shape (n,2)
             dist:distance between each and every agent
         """
+        radii = x_c[:,5]
+        strength_factor = radii/10
+        radii = radii*m_factor
+
         if len(x_c) == 1:
             return np.array([[0.0]]),None
         diff = x_c[:,:2][:,np.newaxis,:] - x_c[:,:2][np.newaxis,:,:]
@@ -235,7 +239,7 @@ class DoubleIntegrator:
         dir = diff/dist[:,:,np.newaxis]
         potential = (1.0 / dist - 1.0 / radii)
         potential[potential < 0] = 0
-        collision_potentials = strength * (potential)
+        collision_potentials = strength * (potential) * strength_factor
         agent_potential = np.sum(collision_potentials[:,:,np.newaxis]*dir, axis = 1)
 
         return agent_potential,dist

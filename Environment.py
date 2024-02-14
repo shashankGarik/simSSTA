@@ -151,7 +151,7 @@ class Environment():
     ################ Metrics ########################
     
     #plotting on the screen
-    def draw_map(self, color_BG = 'black', color_obs = 'red'):
+    def draw_map(self, color_BG = 'white', color_obs = 'red'):
         self.screen.fill(self.colors[color_BG])
         for obs in self.obstacles['circle']:
             pygame.draw.circle(self.screen, self.colors[color_obs], obs, 20)
@@ -161,16 +161,16 @@ class Environment():
         if self.debugging:
             for point_set in self.intersections:
                 for x, y in point_set:
-                    pygame.draw.circle(self.screen, self.colors[color_BG], (x, y), 3)
+                    pygame.draw.circle(self.screen, self.colors['black'], (x, y), 3)
 
-    def plot_segment_frame(self,center,box_points):
+    def plot_segment_frame(self,center,box_points, frame_color = 'black'):
         # print(center)
         t_l,t_r,b_l,b_r = box_points
         box_points = np.array([t_l,t_r,b_r,b_l]).transpose(1,0,2)   
         # frames = np.array([[center, box_points]])
 
         for i, row in enumerate(center.T):
-            pygame.draw.polygon(self.screen, self.colors['black'], box_points[i,:],3)
+            pygame.draw.polygon(self.screen, self.colors[frame_color], box_points[i,:],3)
             if self.debugging == True:
                 pygame.draw.circle(self.screen, self.colors['red'], row, 3)
 
@@ -181,8 +181,8 @@ class Environment():
             else:
                 agent_color = self.colors["red"]
             if self.debugging:
-                pygame.draw.circle(self.screen, self.colors['white'], goal, 2)
-            pygame.draw.circle(self.screen, agent_color, start[:2], 10)
+                pygame.draw.circle(self.screen, self.colors['black'], goal, 2)
+            pygame.draw.circle(self.screen, agent_color, start[:2], start[5])
 
     def camera_agents(self,local_points_camera_1,box_limits, agent_pos):
         self.camera_x_local, self.camera_x_global = 0,0

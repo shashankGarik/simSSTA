@@ -179,7 +179,13 @@ class LoopSimulation:
                 goal_points[condition_goal,1]=y_goal
 
             color_vec = np.random.randint(0,6,size=(start_points.shape[0],1))
-            start_points = np.hstack([start_points,color_vec])
+
+            radius_choice = [10, 8, 7, 13, 15]
+            radius_prob = [0.5, 0.175, 0.125, 0.10, 0.10]         
+
+            radius_vec = np.random.choice(radius_choice, p = radius_prob, size=(start_points.shape[0],1))
+            start_points = np.hstack([start_points,color_vec, radius_vec])
+            
             # print(start_points[0])
 
             start_points,goal_points,sample_n=self.check_spawning_overlap(start_points,goal_points)
