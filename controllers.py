@@ -1,4 +1,5 @@
 import numpy as np
+import utils
 
 class DoubleIntegrator:
     """
@@ -265,3 +266,13 @@ class DoubleIntegrator:
             obstacle_logic.append(a_collision)
         collision= np.logical_or.reduce(obstacle_logic)
         return collision
+    
+
+    class controlSSTA:
+        def __init__(self, T2NO_dirs, ):
+            pass
+        def _compute_paths(self, t2nod, start_pos, goal_pos):
+            pass
+        def path2global(self, paths, tranforms):
+            pass
+        

@@ -15,7 +15,7 @@ class CarSimulation(Environment):
         pygame.display.set_caption("Car Simulation")#Windows heading
 
         self.debugging = False
-        self.save_data = False
+        self.save_data = True
 
         # Set up car and goal positions
         self.car_pos = start_vec
@@ -24,7 +24,7 @@ class CarSimulation(Environment):
         self.obstacles = obstacle_vec
         self.controller = controller
         self.clock = pygame.time.Clock()
-        self.frame_rate= 120
+        self.frame_rate= 60
 
         self.control = self.controller(self.car_pos, self.goal_pos, self.obstacles)
         self.control.dt = 1/self.frame_rate
@@ -104,7 +104,7 @@ class CarSimulation(Environment):
 
 if __name__ == "__main__":
    
-    start = np.array([[-50.0, 300.0, 0.0, 0.0, 1, 15, 0],[-30.0, 50.0, 0.0, 0.0,1, 15,0]])# startx,starty,vx,vy,colour,radius,type(agent)
+    start = np.array([[-50.0, 300.0, 0.0, 0.0, 1, 15, -1],[-30.0, 50.0, 0.0, 0.0,1, 15, -1]])# startx,starty,vx,vy,colour,radius,type(agent)
     #the agent type 0 indicates APF and 1 indicates SSTA
     # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal,y,local_goal_x(intersection_x),local_goal_y(intersection_y)
     goal = np.array([[800, 1500,None,None],[700, 1600,None,None]]) # the new one is an object

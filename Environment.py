@@ -182,7 +182,20 @@ class Environment():
                 agent_color = self.colors["red"]
             if self.debugging:
                 pygame.draw.circle(self.screen, self.colors['black'], goal, 2)
-            pygame.draw.circle(self.screen, agent_color, start[:2], start[5])
+            if start[6] == -1:
+                pygame.draw.circle(self.screen, agent_color, start[:2], start[5])
+            else:
+
+                vertices = self.calculate_equilateral_polygon_vertices(start[:2],int(start[5]), int(start[6]))
+                pygame.draw.polygon(self.screen, agent_color, vertices)
+
+    def calculate_equilateral_polygon_vertices(self, center, radius, num_sides):
+        angles = np.linspace(0, 2*np.pi, num_sides, endpoint=False)
+        x = center[0] + radius * np.cos(angles)
+        y = center[1] + radius * np.sin(angles)
+        vertices = [(round(x[i],2), round(y[i],2)) for i in range(num_sides)]
+        vertices.append(vertices[0])  # Append the first vertex again to close the polygon
+        return vertices
 
     def camera_agents(self,local_points_camera_1,box_limits, agent_pos):
         self.camera_x_local, self.camera_x_global = 0,0
@@ -277,6 +290,7 @@ class Environment():
         masked_image.blit(image, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
         masked_image.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
         return masked_image
+
     
        
        
