@@ -42,7 +42,7 @@ class Environment():
 
         }
 
-        self.agent_colors = ['glaucous','teal','indigo','blue','blueGray','lblue']
+        self.agent_colors = ['glaucous','teal','indigo','blue','blueGray','lblue','lgreen']
 
         # Set up car and goal positions
         self.cur_pos = None
@@ -174,8 +174,8 @@ class Environment():
             if self.debugging == True:
                 pygame.draw.circle(self.screen, self.colors['red'], row, 3)
 
-    def draw_agents_with_goals(self, collision_flag):
-        for start, goal, collided in zip(self.cur_pos, self.goal_pos, collision_flag):
+    def draw_agents_with_goals(self,collision_flags):
+        for start, goal, collided in zip(self.cur_pos, self.goal_pos, collision_flags):
             if collided == False:
                 agent_color = self.colors[self.agent_colors[int(start[4])]]
             else:

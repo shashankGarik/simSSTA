@@ -43,7 +43,6 @@ class LoopSimulation:
         self.old_agents_start=old_agents_start
         self.old_agents_goal=old_agents_goal
         start_points,goal_points=self.create_agents(1, 50)
-        goal_points=np.hstack([goal_points,np.full((goal_points.shape[0],2),None)])
         new_agents = {"start": start_points, "goal" :goal_points}
         return new_agents
     
