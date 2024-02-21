@@ -156,8 +156,7 @@ class Environment():
         for obs in self.obstacles['circle']:
             pygame.draw.circle(self.screen, self.colors[color_obs], obs, 20)
         for x,y,w,h in self.obstacles['rectangle']:
-            pygame.draw.rect(self.screen, self.colors[color_obs], pygame.Rect(x - w/2, y - h/2,w,h))
-        
+            pygame.draw.rect(self.screen, self.colors[color_obs], pygame.Rect(x - w/2, y - h/2,w,h))  
         if self.debugging:
             for point_set in self.intersections:
                 for x, y in point_set:
@@ -168,10 +167,10 @@ class Environment():
         t_l,t_r,b_l,b_r = box_points
         box_points = np.array([t_l,t_r,b_r,b_l]).transpose(1,0,2)   
         # frames = np.array([[center, box_points]])
-
-        for i, row in enumerate(center.T):
-            pygame.draw.polygon(self.screen, self.colors[frame_color], box_points[i,:],3)
-            if self.debugging == True:
+        if self.debugging == True:
+            for i, row in enumerate(center.T):
+                pygame.draw.polygon(self.screen, self.colors[frame_color], box_points[i,:],3)
+            
                 pygame.draw.circle(self.screen, self.colors['red'], row, 3)
 
     def draw_agents_with_goals(self,collision_flags):
@@ -185,7 +184,6 @@ class Environment():
             if start[6] == -1:
                 pygame.draw.circle(self.screen, agent_color, start[:2], start[5])
             else:
-
                 vertices = self.calculate_equilateral_polygon_vertices(start[:2],int(start[5]), int(start[6]))
                 pygame.draw.polygon(self.screen, agent_color, vertices)
 
@@ -197,22 +195,86 @@ class Environment():
         vertices.append(vertices[0])  # Append the first vertex again to close the polygon
         return vertices
 
-    def camera_agents(self,local_points_camera_1,box_limits, agent_pos):
+    def camera_agents(self,local_points_camera_1,box_limits, agent_pos,goal_pos):
         self.camera_x_local, self.camera_x_global = 0,0
         min_x_1,max_x_1,min_y_1,max_y_1=(np.zeros(box_limits.shape)[:,np.newaxis], box_limits[:,np.newaxis], np.zeros(box_limits.shape)[:,np.newaxis], box_limits[:,np.newaxis])
         x_row_1,y_row_1=local_points_camera_1[:,:,0],local_points_camera_1[:,:,1]
         inside_camera_x = np.logical_and(x_row_1 >= min_x_1, x_row_1 <= max_x_1) & np.logical_and(y_row_1 >= min_y_1, y_row_1 <= max_y_1)
         
-        global_points = []
+        global_agent_points = []
         local_points = []
-
+        global_goal_points=[]
+        camera_points_indices=[]
         for i in range(len(box_limits)):
             camera_x_indices=np.where(inside_camera_x[i])
-            global_points.append(agent_pos[camera_x_indices])
+            global_agent_points.append(agent_pos[camera_x_indices])
+            global_goal_points.append(goal_pos[camera_x_indices])
             local_points.append(local_points_camera_1[i][camera_x_indices])
+            camera_points_indices.append(camera_x_indices)
+            
+        return  local_points,global_agent_points,global_goal_points,camera_points_indices
 
-        return  global_points, local_points
-    
+
+ ################### finding local goal direct projection ##########
+    def line_intersection(self,p1, p2, square_sides):
+        np.seterr(divide='ignore')
+        p3_0,p3_1,p4_0,p4_1=square_sides[:,0,0],square_sides[:,0,1],square_sides[:,1,0],square_sides[:,1,1] 
+        denominator = np.dot((p2[:,0] - p1[:,0])[:, np.newaxis] , ((p4_1- p3_1)[:, np.newaxis]).T) - np.dot(((p4_0 - p3_0)[:, np.newaxis]),((p2[:,1] - p1[:,1])[:, np.newaxis].T)).T
+        a = p1[:,1][:, np.newaxis]  - p3_1[:, np.newaxis].T
+        b = p1[:,0][:, np.newaxis]  - p3_0[:, np.newaxis] .T
+        numerator1 = (np.tile(((p4_0 - p3_0)[:, np.newaxis]),(1,p2.shape[0])) *a.T) - (np.tile(((p4_1 - p3_1)[:, np.newaxis]),(1,p2.shape[0])) *b.T)
+        numerator2 = ((np.tile(((p2[:,0] - p1[:,0])[:, np.newaxis]),(1,4)) *a)).T - ((np.tile(((p2[:,1] - p1[:,1])[:, np.newaxis]),(1,4)) *b)).T
+        ua = numerator1.T / denominator
+        ub = numerator2.T / denominator
+        valid = (0 <= ua) & (ua <= 1) & (0 <= ub) & (ub <= 1)
+        idx = np.where(valid)
+        new_ua,new_ub=ua[idx],ub[idx]
+        intersection_x,intersection_y=[p1[:,0] + new_ua * (p2[:,0] - p1[:,0]), p1[:,1] + new_ua * (p2[:,1] - p1[:,1])]
+        intersection_stack= np.vstack([intersection_x, intersection_y])
+        # print(intersection_stack.T)
+        return intersection_stack.T
+
+    def find_segment_square_intersection(self,segment, square):
+        """Find intersections between a line segment and a square."""
+        intersections = []
+        # Define square sides as segments
+        square_sides = np.array([[square[0], square[1]], [square[1], square[2]],
+                        [square[2], square[3]], [square[3], square[0]]])
+        intersections = self.line_intersection(segment[0], segment[1],square_sides )   
+        return intersections
+
+    def global_local_goal(self,ssta_goal_pos,camera_points_indices,agents_global_points,goal_global_points,frame_edges):
+        #finds the new local global goal in the box and replaces in the ssta goal pose local goal points first as None
+        intersections_all=[]
+        ssta_goal_pos[:,2:5]=np.full((len(ssta_goal_pos),3), None)#if agent exits box everything will become none
+        for view in range(len(agents_global_points)):
+            (t_l,t_r,b_l,b_r)=frame_edges
+            segment = [agents_global_points[view][:,:2],goal_global_points[view] ]  # Line segment defined by its two end points
+            square = [(t_l[view][0],t_l[view][1]),(t_r[view][0],t_r[view][1]),(b_r[view][0],b_r[view][1]),(b_l[view][0],b_l[view][1])]  # Square defined by its four corners
+            # Find intersections
+            intersection_view = self.find_segment_square_intersection(segment, square)
+            # print("Intersection Points:", intersections)
+            intersections_all.append(intersection_view)
+            ssta_goal_pos[camera_points_indices[view],2:4]=intersection_view
+            ssta_goal_pos[camera_points_indices[view],4]=np.full((len(intersection_view),), view)
+
+        return ssta_goal_pos,intersections_all
+    # def test_intersection(self,intersections):
+    #         print(intersections.shape)
+    #         if intersections.shape[1]==1:
+    #             pygame.draw.circle(self.screen, self.colors["blue"], (intersections[0], intersections[1]), 10)
+    #         else:
+    #             for point_set in intersections:
+    #                 print(point_set)
+    #                 x, y =point_set[0],point_set[1]
+    #                 print("hi",x,y)
+    #                 pygame.draw.circle(self.screen, self.colors["blue"], (x, y), 10)
+
+        
+# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -X- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        
+
+
     #save camera images
     def save_camera_image(self, frame_sizes ,frame_corners, index, train_len, val_len, test_len, buffer = 500):
 
@@ -234,7 +296,7 @@ class Environment():
 
         t_l,t_r,b_l,b_r = frame_corners # unpacking corners for all frames
 
-        main_path = "C:/Users/shash/OneDrive/Desktop/SSTA_2/simSSTA/dataset/"
+        main_path = "C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/"
 
         if data_type != None:
             branched_path = main_path + data_type

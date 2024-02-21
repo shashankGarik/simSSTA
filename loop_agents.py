@@ -187,7 +187,7 @@ class LoopSimulation:
 
             radius_vec = np.random.choice(radius_choice, p = radius_prob, size=(start_points.shape[0],1))
 
-            shape_choice = [-1,3,5,6,7]
+            shape_choice = [3,5,6,7,8]
             polygon_vec = np.random.choice(shape_choice, size=(start_points.shape[0],1))
 
             start_points = np.hstack([start_points,color_vec, radius_vec, polygon_vec])

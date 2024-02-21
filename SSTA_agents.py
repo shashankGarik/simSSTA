@@ -8,16 +8,16 @@ from Environment import Environment
 
 class SSTAAgents():
     def __init__(self,obstacles,controller,frame_rate,infinity):
-        self.car_pos = np.array([[-20.0, 300.0, 0.0, 0.0, 6, 15, -1],[-10.0, 50.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
+        self.car_pos = np.array([[-20.0, 300.0, 0.0, 0.0, 6, 15, -1],[-10.0, 50.0, 0.0, 0.0,6, 15, -1],[-10.0, 80.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
         # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal,y,local_goal_x(intersection_x),local_goal_y(intersection_y)
-        self.goal_pos = np.array([[800, 1500,None,None],[700, 1600,None,None]]) # the new one is an object# goal is with local goal also
+        self.goal_pos = np.array([[1500, 1500,None,None,None],[1500, 1600,None,None,None],[1500, 1200,None,None,None]]) # globalgx,globalgy,viewglobalgx,viewglobalgy,viewlocalgx,view/segment
         
         self.obstacles = obstacles
         self.controller = controller
         self.infinity = infinity
         self.control = self.controller(self.car_pos, self.goal_pos, self.obstacles)
         self.control.dt = 1/frame_rate
-        self.random_agent_generate_time=100
+        self.random_agent_generate_time=1000
         self.car_pos = self.control.x
         self.goal_pos = self.control.goal_pos
 
