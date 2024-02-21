@@ -17,11 +17,12 @@ class APFAgents():
         self.infinity = infinity
         self.control = self.controller(self.car_pos, self.goal_pos, self.obstacles)
         self.control.dt = 1/frame_rate
-        self.random_agent_generate_time=100
+        self.random_agent_generate_time=100 #change to generate varied agents at shorter or longer time
+        self.generate_flag=False
 
     def generate_agents(self,timer):
         # Update car position
-        if timer%self.random_agent_generate_time==0:
+        if timer%self.random_agent_generate_time==0 and self.generate_flag:
             new_agents=self.infinity.run_simulation(self.car_pos,(self.goal_pos[:,:2]).astype(np.int32))# important that goal points passed in must be global and of int 32
             self.control.create_agents(new_agents)
             self.car_pos = self.control.x

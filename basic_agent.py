@@ -78,12 +78,17 @@ class CarSimulation(Environment):
 
             #first converting all the global points to local points
             local_cur_points_ssta = self.global_local_transform(global_cur_points_ssta,t_l,self.frame_angle)
-
             #ssta agents local and global points
             local_cur_points, global_cur_points,global_goal_points,camera_points_indices=self.camera_agents(local_cur_points_ssta,self.side_length, self.ssta_car_pos,self.ssta_goal_pos)
-            self.ssta_agents.goal_pos,_=self.global_local_goal(self.ssta_goal_pos,camera_points_indices,global_cur_points,global_goal_points,(t_l,t_r,b_l,b_r))
-
+            
+            self.ssta_agents.goal_pos,intersections_views=self.global_local_goal(self.ssta_goal_pos,camera_points_indices,global_cur_points,global_goal_points,(t_l,t_r,b_l,b_r))
+            # plot intersections that is local goal
+            self.test_intersection_local_goal(intersections_views)
             #creating path using T2NO(give local start and local goal)
+
+            #assume you get a path from T2no file
+
+            #controller switch
             print(self.ssta_agents.goal_pos)
         
 

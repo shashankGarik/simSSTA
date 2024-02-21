@@ -173,6 +173,17 @@ class Environment():
             
                 pygame.draw.circle(self.screen, self.colors['red'], row, 3)
 
+    def test_intersection_local_goal(self,intersections):
+        # print(intersections.shape)
+        if self.debugging:
+            for intersection in intersections:
+                if intersection.shape[1]==1:
+                    pygame.draw.circle(self.screen, self.colors["blue"], (intersection[0], intersection[1]), 5)
+                else:
+                    for point_set in intersection:
+                        x, y =point_set[0],point_set[1]
+                        pygame.draw.circle(self.screen, self.colors["blue"], (x, y), 5)
+
     def draw_agents_with_goals(self,collision_flags):
         for start, goal, collided in zip(self.cur_pos, self.goal_pos, collision_flags):
             if collided == False:
@@ -259,16 +270,7 @@ class Environment():
             ssta_goal_pos[camera_points_indices[view],4]=np.full((len(intersection_view),), view)
 
         return ssta_goal_pos,intersections_all
-    # def test_intersection(self,intersections):
-    #         print(intersections.shape)
-    #         if intersections.shape[1]==1:
-    #             pygame.draw.circle(self.screen, self.colors["blue"], (intersections[0], intersections[1]), 10)
-    #         else:
-    #             for point_set in intersections:
-    #                 print(point_set)
-    #                 x, y =point_set[0],point_set[1]
-    #                 print("hi",x,y)
-    #                 pygame.draw.circle(self.screen, self.colors["blue"], (x, y), 10)
+   
 
         
 # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -X- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
