@@ -1,7 +1,7 @@
 import pygame
 import random
 import numpy as np
-from controllers import *
+from controllers_APF import *
 from basic_agent import *
 from itertools import permutations
 

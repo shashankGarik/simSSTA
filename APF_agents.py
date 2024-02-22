@@ -1,9 +1,6 @@
 import pygame
 import numpy as np
-from controllers import *
 # from test_cases import *
-from loop_agents import *
-# from loop_agents import LoopSimulation
 from Environment import Environment
 
 class APFAgents():
@@ -17,8 +14,8 @@ class APFAgents():
         self.infinity = infinity
         self.control = self.controller(self.car_pos, self.goal_pos, self.obstacles)
         self.control.dt = 1/frame_rate
-        self.random_agent_generate_time=100 #change to generate varied agents at shorter or longer time
-        self.generate_flag=False
+        self.random_agent_generate_time=400 #change to generate varied agents at shorter or longer time
+        self.generate_flag=True
 
     def generate_agents(self,timer):
         # Update car position

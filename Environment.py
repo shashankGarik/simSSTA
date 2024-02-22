@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import math,cv2
 # from PIL import Image, ImageDraw
-from controllers import *
+from controllers_APF import *
 from test_cases import *
 
 
@@ -108,7 +108,6 @@ class Environment():
         x_g, y_g = global_position[:, 0], global_position[:, 1]
         x_origin, y_origin = local_origin[:,0], local_origin[:,1]
         theta = np.radians(frame_angle)
-        some = x_origin * np.cos(theta) - y_origin * np.sin(theta)
         transformation_matrix = np.array([
             [np.cos(theta), np.sin(theta), -x_origin * np.cos(theta) - y_origin * np.sin(theta)],
             [-np.sin(theta), np.cos(theta), x_origin * np.sin(theta) - y_origin * np.cos(theta)],
@@ -254,10 +253,10 @@ class Environment():
         intersections = self.line_intersection(segment[0], segment[1],square_sides )   
         return intersections
 
-    def global_local_goal(self,ssta_goal_pos,camera_points_indices,agents_global_points,goal_global_points,frame_edges):
+    def global_local_goal(self,ssta_goal_pos,camera_points_indices,local_cur_points,agents_global_points,goal_global_points,frame_edges,frame_angle):
         #finds the new local global goal in the box and replaces in the ssta goal pose local goal points first as None
         intersections_all=[]
-        ssta_goal_pos[:,2:5]=np.full((len(ssta_goal_pos),3), None)#if agent exits box everything will become none
+        ssta_goal_pos[:,2:]=np.full((len(ssta_goal_pos),5), None)#if agent exits box everything will become none
         for view in range(len(agents_global_points)):
             (t_l,t_r,b_l,b_r)=frame_edges
             segment = [agents_global_points[view][:,:2],goal_global_points[view] ]  # Line segment defined by its two end points
@@ -266,8 +265,11 @@ class Environment():
             intersection_view = self.find_segment_square_intersection(segment, square)
             # print("Intersection Points:", intersections)
             intersections_all.append(intersection_view)
-            ssta_goal_pos[camera_points_indices[view],2:4]=intersection_view
-            ssta_goal_pos[camera_points_indices[view],4]=np.full((len(intersection_view),), view)
+            #converting view_goal_global_point to view_goal_local_Point
+            goal_view_points_ssta = self.global_local_transform(intersection_view,t_l,frame_angle)
+            ssta_goal_pos[camera_points_indices[view],2:4]=goal_view_points_ssta[view] #adding global local
+            ssta_goal_pos[camera_points_indices[view],4:6]=local_cur_points[view] # adding local curr point
+            ssta_goal_pos[camera_points_indices[view],6]=np.full((len(intersection_view),), view)
 
         return ssta_goal_pos,intersections_all
    

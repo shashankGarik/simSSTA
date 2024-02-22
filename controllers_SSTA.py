@@ -1,7 +1,7 @@
 import numpy as np
 import utils
 
-class DoubleIntegrator:
+class DoubleIntegratorSSTA:
     """
     acceleration-based PD control using double integrator mode. Multi agent-multi obstacle, 
     Avoids obstacles, and avoids other agent.
@@ -38,19 +38,18 @@ class DoubleIntegrator:
         self.Kd_1 = np.array([[10, 0],
                               [0, 10]])
 
-    def step(self):
-        
+    def step_apf(self): 
         self.frame_agents()
         self.total_time+=self.dt
         obstacle_potential = 0
         rectangle_distance,circle_distance,agent_distance=None,None,None
 
         if len(self.obs_circle) != 0:
-            c_obstacle_potential,circle_distance = DoubleIntegrator.avoid_circle(200, 500000, self.obs_circle, self.x)     
+            c_obstacle_potential,circle_distance = DoubleIntegratorSSTA.avoid_circle(200, 500000, self.obs_circle, self.x)     
             obstacle_potential=c_obstacle_potential+obstacle_potential
 
         if len(self.obs_rectangle) != 0:
-            r_obstacle_potential,rectangle_distance,self.intersections = DoubleIntegrator.avoid_rectangle(80, 80000, self.obs_rectangle, self.x)
+            r_obstacle_potential,rectangle_distance,self.intersections = DoubleIntegratorSSTA.avoid_rectangle(80, 80000, self.obs_rectangle, self.x)
             obstacle_potential=r_obstacle_potential+obstacle_potential
 
         error = ((self.goal_pos[:,:2]).astype(np.int32)) - self.x[:,:2]
@@ -64,7 +63,7 @@ class DoubleIntegrator:
         prop_potential = np.zeros((self.x[:,:4].shape[0],2))
         diff_potential = np.zeros((self.x[:,:4].shape[0],2))
 
-        agent_potential,agent_distance = DoubleIntegrator.avoid_agents(9, 60000, self.x)#100000
+        agent_potential,agent_distance = DoubleIntegratorSSTA.avoid_agents(9, 60000, self.x)#100000
         prop_potential = np.squeeze(np.dot(self.Kp_1[np.newaxis, :,:], error[:,:,np.newaxis])).T
         prop_potential = self.desired_force(1000)
 
@@ -94,6 +93,38 @@ class DoubleIntegrator:
 
         self.remove_agent_goal()
         self.frame_agents()
+
+    def step_ssta(self): 
+        self.frame_agents()
+        self.total_time+=self.dt
+        if len(self.obs_rectangle) != 0:
+            _,_,self.intersections = DoubleIntegratorSSTA.avoid_rectangle(80, 80000, self.obs_rectangle, self.x)
+        error = ((self.goal_pos[:,:2]).astype(np.int32)) - self.x[:,:2]
+        self.dist2goal = np.linalg.norm(error, axis = 1)
+        v_error = 5-self.x[:,2:4]
+        prop_potential = np.zeros((self.x[:,:4].shape[0],2))
+        diff_potential = np.zeros((self.x[:,:4].shape[0],2))
+        prop_potential = np.squeeze(np.dot(self.Kp_1[np.newaxis, :,:], error[:,:,np.newaxis])).T
+        prop_potential = self.desired_force(1000)
+        diff_potential = np.squeeze(np.dot(self.Kd_1[np.newaxis,:,:], v_error[:,:,np.newaxis])).T
+        control_input = prop_potential + diff_potential
+        A_x = np.squeeze(np.dot(self.A[np.newaxis,:,:], self.x[:,:4,np.newaxis]))
+        B_u = np.squeeze(np.dot(self.B[np.newaxis,:,:], control_input[:,:, np.newaxis]))
+        v = (A_x + B_u).T
+        #XXXX collision detetctionXXX
+        #this line to collide show and go
+        if self.x.shape[1] > 4:
+            self.x = np.hstack([self.x[:,:4] + self.dt * v,self.x[:,4:]])
+        else:
+            self.x = self.x[:,:4] + self.dt * v
+        self.remove_agent_goal()
+        self.frame_agents()
+
+    def car_pos(self):
+        # split self.x as 
+        if len(self.x)!=None:
+            self.step_ssta()
+        return  self.x,self.goal_pos
     
     def create_agents(self, new_agents):
         self.x = np.concatenate([self.x, new_agents["start"]])
@@ -131,12 +162,6 @@ class DoubleIntegrator:
      
         return self.capacity,self.volume
     
-    def car_pos(self):
-        # print(len(self.x))
-        if len(self.x)!=None:
-            self.step()
-        return  self.x,self.goal_pos
-    
     def collision_status(self):
         return self.agent_collision
     
@@ -156,7 +181,7 @@ class DoubleIntegrator:
         return speed
     
     def collision_detection(self,v,agent_distance,rectangle_distance,circle_distance,goal_reached_idx):
-        self.agent_collision=DoubleIntegrator.collision_analysis(self.agent_collision,agent_distance,rectangle_distance,circle_distance)
+        self.agent_collision=DoubleIntegratorSSTA.collision_analysis(self.agent_collision,agent_distance,rectangle_distance,circle_distance)
         self.agent_collision[self.outside_frame_x_indices]=False
         # print(self.agent_collision.shape)
         self.true_indices_agent_collision = np.where(self.agent_collision)

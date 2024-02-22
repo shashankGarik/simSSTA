@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
-from controllers import *
+from controllers_APF import *
+from controllers_SSTA import *
 # from test_cases import *
 from loop_agents import *
 from Environment import Environment
@@ -8,7 +9,7 @@ from APF_agents import *
 from SSTA_agents import *
 
 class CarSimulation(Environment):
-    def __init__(self, obstacle_vec,controller):
+    def __init__(self, obstacle_vec):
         super().__init__(800, 800, obstacle_vec)
         # Initialize Pygame necessary for initialising the simulation window and graphics
         print('Initializing Agents')
@@ -16,18 +17,17 @@ class CarSimulation(Environment):
         pygame.display.set_caption("Car Simulation")#Windows heading
 
         self.debugging = True
-        self.save_data = True
+        self.save_data = False
 
         # Set up car and goal positions
         self.car_pos = None
         self.goal_pos = None
         self.obstacles = obstacle_vec
-        self.controller = controller
         self.clock = pygame.time.Clock()
         self.frame_rate= 60
         self.infinity = LoopSimulation(800,800,120,1,1,42)
-        self.apf_agents=APFAgents(obstacle_vec,controller,self.frame_rate,self.infinity)
-        self.ssta_agents=SSTAAgents(obstacle_vec,controller,self.frame_rate,self.infinity)
+        self.apf_agents=APFAgents(obstacle_vec,DoubleIntegratorAPF,self.frame_rate,self.infinity)
+        self.ssta_agents=SSTAAgents(obstacle_vec,DoubleIntegratorSSTA,self.frame_rate,self.infinity)
         self.timer=0
         # setting the number of views/segment(default 2 view)
         self.twin_boxes = np.array([[-60,300,400,300],[-60,450,50,300]])
@@ -78,19 +78,27 @@ class CarSimulation(Environment):
 
             #first converting all the global points to local points
             local_cur_points_ssta = self.global_local_transform(global_cur_points_ssta,t_l,self.frame_angle)
+            # print(local_cur_points_ssta)
             #ssta agents local and global points
             local_cur_points, global_cur_points,global_goal_points,camera_points_indices=self.camera_agents(local_cur_points_ssta,self.side_length, self.ssta_car_pos,self.ssta_goal_pos)
             
-            self.ssta_agents.goal_pos,intersections_views=self.global_local_goal(self.ssta_goal_pos,camera_points_indices,global_cur_points,global_goal_points,(t_l,t_r,b_l,b_r))
-            # plot intersections that is local goal
-            self.test_intersection_local_goal(intersections_views)
-            #creating path using T2NO(give local start and local goal)
+            self.ssta_agents.goal_pos,intersections_views_global_points=self.global_local_goal(self.ssta_goal_pos,camera_points_indices,local_cur_points,global_cur_points,global_goal_points,(t_l,t_r,b_l,b_r),self.frame_angle)
+            
+            # plot intersections that is local goal if self.debugging
+            self.test_intersection_local_goal(intersections_views_global_points)
+            
+            print(self.ssta_agents.goal_pos)
 
             #assume you get a path from T2no file
 
-            #controller switch
-            print(self.ssta_agents.goal_pos)
-        
+            #creating path using T2NO (give local start and local goal# index 2,3-goalpoint,4,5-startcurr point-self.ssta_agents.goal_pos )
+           
+            #convert the local_path_points to global_path_points:(create a function to convert local to global)
+
+
+
+
+         
 
 
 
@@ -136,5 +144,5 @@ if __name__ == "__main__":
                                 [500,300,30,30],
                                 [700,500,30,30],
                                 [500,700,30,30]])}
-    simulation = CarSimulation(obstacles, DoubleIntegrator)
+    simulation = CarSimulation(obstacles)
     simulation.run_simulation()
