@@ -30,9 +30,20 @@ class CarSimulation(Environment):
         self.ssta_agents=SSTAAgents(obstacle_vec,DoubleIntegratorSSTA,self.frame_rate,self.infinity)
         self.timer=0
         # setting the number of views/segment(default 2 view)
-        self.twin_boxes = np.array([[-60,300,400,300],[-60,450,50,300]])
+        self.twin_boxes = np.array([[60,300,400,300],[-60,450,50,300]])
         # each side of box/view/segment 
         self.side_length = self.twin_boxes[:,-1]
+        # self.testarray=[np.array([[[0., 0.], [50.84487633, 50.50066381], [1.94161902, 6.37797936], [2.03836171, 7.25529491], [2.1351044 , 8.13261046]],
+        #                     [[7.98073202, 3.48413673], [6.43941434, 2.76511446], [4.89809667, 2.04609219], [3.356779  , 1.32706991], [1.81546132, 0.60804764]],
+        #                     [[7.12065032, 7.68735929], [6.2450809 , 7.48163578], [5.36951149, 7.27591228], [4.49394207, 7.07018877], [3.61837266, 6.86446527]],
+        #                     [[1.47936813, 7.05368861], [3.30240433, 6.16675487], [5.12544054, 5.27982112], [6.94847674, 4.39288737], [8.77151295, 3.50595363]],
+        #                     [[3.40850695, 1.72462363], [3.25639422, 2.50411163], [3.10428148, 3.28359964], [2.95216875, 4.06308764], [2.80005601, 4.84257564]],
+        #                     [[3.43767804, 3.97734152], [3.5352342 , 4.98171042], [3.63279036, 5.98607931], [3.73034652, 6.9904482 ], [3.82790267, 7.9948171 ]],
+        #                     [[0.28528882, 8.65442989], [1.44266704, 7.16415108], [2.60004526, 5.67387227], [3.75742349, 4.18359346], [4.91480171, 2.69331465]],
+        #                     [[3.99750614, 8.40244838], [3.70858772, 6.58400636], [3.41966931, 4.76556435], [3.13075089, 2.94712233], [2.84183248, 1.12868032]],
+        #                     [[9.8946591 , 8.96850668], [9.20652376, 7.90496581], [8.51838841, 6.84142493], [7.83025307, 5.77788406], [7.14211773, 4.71434319]],
+        #                     [[4.53858008, 5.23847224], [4.70827311, 500.65541641], [4.87796614, 6.07236059], [5.04765917, 6.48930477], [5.2173522 , 6.90624895]]]
+        #                     )]
     
 
     def run_simulation(self):
@@ -77,6 +88,7 @@ class CarSimulation(Environment):
 
 
             #first converting all the global points to local points
+   
             local_cur_points_ssta = self.global_local_transform(global_cur_points_ssta,t_l,self.frame_angle)
             # print(local_cur_points_ssta)
             #ssta agents local and global points
@@ -86,11 +98,19 @@ class CarSimulation(Environment):
             
             # plot intersections that is local goal if self.debugging
             self.test_intersection_local_goal(intersections_views_global_points)
-            
-            print(self.ssta_agents.goal_pos)
+
+            # print(self.ssta_car_pos)
+            # print("-------")
+            # print(self.ssta_goal_pos)
+            # print("-------")
+         
 
             #assume you get a path from T2no file
+            #path shape is n,(m,2)  -n -no of views,m-no.of agents
+            # global_path=self.transform_local_to_global_path_vectorized(self.testarray,t_l,self.frame_angle)
+            #the global path is stored as a list to access
 
+            ### now with the lists mapped use the indices to have a global path variable
             #creating path using T2NO (give local start and local goal# index 2,3-goalpoint,4,5-startcurr point-self.ssta_agents.goal_pos )
            
             #convert the local_path_points to global_path_points:(create a function to convert local to global)

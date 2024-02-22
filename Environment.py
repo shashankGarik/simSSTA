@@ -119,6 +119,37 @@ class Environment():
         local_points = homogeneous_local_points[:,:, :2]
         return local_points
     
+
+    # #3##########################l-g
+    ## for one frame /view any number of points
+    def transform_local_to_global_path_vectorized(self,all_local_points, all_local_origin, all_frame_angle):
+        """
+        Vectorized conversion of local points to global points.
+        
+        :param local_points: A (m, k, 2) numpy array of local points for m agents and k points each.
+        :param local_origin: A (2,) numpy array representing the x, y coordinates of the local origin.
+        :param frame_angle: The rotation angle of the local frame in degrees.
+        :return: A (m, k, 2) numpy array of global points.
+        """
+        # Convert angle to radians
+        global_path=[]
+        for view in range(len(all_local_points)):
+            frame_angle,local_origin,local_points=all_frame_angle[view],all_local_origin[view],all_local_points[view]
+            theta = np.radians(frame_angle)
+            # Create the rotation matrix
+            rotation_matrix = np.array([
+                [np.cos(theta), -np.sin(theta)],
+                [np.sin(theta), np.cos(theta)]
+            ])
+            # Create the translation vector (expanded to match the shape for broadcasting)
+            translation_vector = local_origin.reshape(1, 1, 2)
+            # Apply rotation
+            rotated_points = np.dot(local_points, rotation_matrix.T)
+            # Apply translation
+            global_path_view_points = rotated_points + translation_vector
+            global_path.append(global_path_view_points)
+        return global_path
+
     ################ Display Metrics ########################
     def display_collision_rate(self,collision_value):
         collison_text ="CR="+str(np.round(collision_value*60,0))+"coll/min"
@@ -267,8 +298,9 @@ class Environment():
             intersections_all.append(intersection_view)
             #converting view_goal_global_point to view_goal_local_Point
             goal_view_points_ssta = self.global_local_transform(intersection_view,t_l,frame_angle)
-            ssta_goal_pos[camera_points_indices[view],2:4]=goal_view_points_ssta[view] #adding global local
-            ssta_goal_pos[camera_points_indices[view],4:6]=local_cur_points[view] # adding local curr point
+        
+            ssta_goal_pos[camera_points_indices[view],2:4]=np.round(np.float64(goal_view_points_ssta[view]),2) #adding global local
+            ssta_goal_pos[camera_points_indices[view],4:6]=np.round(local_cur_points[view],2) # adding local curr point
             ssta_goal_pos[camera_points_indices[view],6]=np.full((len(intersection_view),), view)
 
         return ssta_goal_pos,intersections_all
