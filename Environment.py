@@ -214,7 +214,7 @@ class Environment():
         return  global_points, local_points
     
     #save camera images
-    def save_camera_image(self, frame_sizes ,frame_corners, index, train_len, val_len, test_len, buffer = 500):
+    def save_camera_image(self, frame_sizes ,frame_corners, index, train_len, val_len, test_len, buffer = 500, get_background = True):
 
         train_buffer = buffer
         val_buffer = buffer + train_buffer + train_len
@@ -229,6 +229,9 @@ class Environment():
         elif index >= test_buffer and index  < test_buffer + test_len:
             data_type = 'test'
             reset_counter = test_buffer
+        elif index == 0:
+            data_type = 'background'
+            reset_counter = 0
         else:
             data_type = None # stop saving
 
@@ -244,10 +247,12 @@ class Environment():
                 if not os.path.exists(path):
                     os.makedirs(path)
         
-        if index >= buffer and data_type != None:
+        index_orig = index       
+        
+        if (index >= buffer and data_type != None) or (get_background and index_orig == 0):
             
             index = index - reset_counter
-            if index%100 == 0:
+            if index%100 == 0 and not (get_background and index_orig == 0):
                 print("current image ("+data_type+"): ", index)
 
             for idx in range(len(frame_sizes)): #iterating for each box
@@ -261,8 +266,13 @@ class Environment():
                 matrix = cv2.getPerspectiveTransform(pt1,pt2)
                 output = cv2.warpPerspective(transposed_array,matrix,(width, height))
                 # print(idx)
+
                 
                 save_image_name = branched_path + "/camera_" + str(idx)  + "/image_" + str(index) + ".jpg"
+                
+                if index_orig == 0 and get_background:
+                    save_image_name = branched_path + "/camera_" + str(idx)  + "/background" + ".jpg"
+
                 output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
                 # print(save_image_name)
                 # cv2.imshow('image',output)
