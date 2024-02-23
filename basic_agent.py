@@ -116,13 +116,6 @@ class CarSimulation(Environment):
             #convert the local_path_points to global_path_points:(create a function to convert local to global)
 
 
-
-
-         
-
-
-
-
             #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
             ##########metrics function need to be modified 
 
