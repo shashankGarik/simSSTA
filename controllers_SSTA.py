@@ -18,6 +18,9 @@ class DoubleIntegratorSSTA:
         self.agent_collision=np.array([False]*self.x.shape[0])
         self.frame_h=800
         self.frame_w=800
+        self.camera_points_indices=[(np.array([], dtype=np.int64),)]
+        self.global_agent_paths=None
+        self.dummy=1
         
 
         self.A = np.array([[0, 0, 1, 0],
@@ -95,35 +98,45 @@ class DoubleIntegratorSSTA:
         self.frame_agents()
 
     def step_ssta(self): 
-        self.frame_agents()
-        self.total_time+=self.dt
-        if len(self.obs_rectangle) != 0:
-            _,_,self.intersections = DoubleIntegratorSSTA.avoid_rectangle(80, 80000, self.obs_rectangle, self.x)
-        error = ((self.goal_pos[:,:2]).astype(np.int32)) - self.x[:,:2]
+        
+        self.global_agent_paths[:,-1]=self.goal_pos[:,:2]
+        error = ((self.global_agent_paths[:,self.dummy]).astype(np.int32)) - self.x[:,:2]
+        # print(self.global_agent_paths[:,3])
         self.dist2goal = np.linalg.norm(error, axis = 1)
         v_error = 5-self.x[:,2:4]
         prop_potential = np.zeros((self.x[:,:4].shape[0],2))
         diff_potential = np.zeros((self.x[:,:4].shape[0],2))
         prop_potential = np.squeeze(np.dot(self.Kp_1[np.newaxis, :,:], error[:,:,np.newaxis])).T
-        prop_potential = self.desired_force(1000)
+        prop_potential = self.ssta_desired_force(1000,self.global_agent_paths[:,self.dummy])
         diff_potential = np.squeeze(np.dot(self.Kd_1[np.newaxis,:,:], v_error[:,:,np.newaxis])).T
         control_input = prop_potential + diff_potential
         A_x = np.squeeze(np.dot(self.A[np.newaxis,:,:], self.x[:,:4,np.newaxis]))
         B_u = np.squeeze(np.dot(self.B[np.newaxis,:,:], control_input[:,:, np.newaxis]))
         v = (A_x + B_u).T
+        # v=0
         #XXXX collision detetctionXXX
         #this line to collide show and go
         if self.x.shape[1] > 4:
             self.x = np.hstack([self.x[:,:4] + self.dt * v,self.x[:,4:]])
         else:
             self.x = self.x[:,:4] + self.dt * v
-        self.remove_agent_goal()
-        self.frame_agents()
+        if self.dist2goal <= 2:
+            self.dummy+=1
+
+   
+
+
 
     def car_pos(self):
         # split self.x as 
         if len(self.x)!=None:
+            pass
+        # print(self.camera_points_indices[0][0].shape)
+        if self.camera_points_indices[0][0].shape[0]!=0:
+            print("inside")
             self.step_ssta()
+        else:
+            self.step_apf()
         return  self.x,self.goal_pos
     
     def create_agents(self, new_agents):
@@ -195,6 +208,12 @@ class DoubleIntegratorSSTA:
     
     def desired_force(self, strength):
         error = (self.goal_pos[:,:2].astype(np.int32)) - self.x[:,:2]
+        dist2goal = np.linalg.norm(error, axis = 1)
+        dir = error/dist2goal[:, np.newaxis]
+        return dir*strength
+    
+    def ssta_desired_force(self, strength,path_pont):
+        error = (path_pont.astype(np.int32)) - self.x[:,:2]
         dist2goal = np.linalg.norm(error, axis = 1)
         dir = error/dist2goal[:, np.newaxis]
         return dir*strength
