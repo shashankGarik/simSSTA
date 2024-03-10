@@ -7,6 +7,7 @@ from loop_agents import *
 from Environment import Environment
 from APF_agents import *
 from SSTA_agents import *
+from path_planners import *
 
 class CarSimulation(Environment):
     def __init__(self, obstacle_vec):
@@ -28,27 +29,17 @@ class CarSimulation(Environment):
         self.infinity = LoopSimulation(800,800,120,1,1,42)
         self.apf_agents=APFAgents(obstacle_vec,DoubleIntegratorAPF,self.frame_rate,self.infinity)
         self.ssta_agents=SSTAAgents(obstacle_vec,DoubleIntegratorSSTA,self.frame_rate,self.infinity)
+        self.path_size=5
+        self.ssta_agents.control.path_size=self.path_size
+
         self.timer=0
         # setting the number of views/segment(default 2 view)
         self.twin_boxes = np.array([[-60,450,50,300]])
         # each side of box/view/segment 
         self.side_length = self.twin_boxes[:,-1]
-        self.testarray=[np.array(
-                        [[[57.01,0.63],
-                        [100.16444444,10.24],
-                        [50.01888889,90.96],
-                        [200.87333333,160.60],
-                        [70.72777778,190.50],
-                        [124.58222222,196.18],
-                        [149.43666667,219.48],
-                        [174.29111111,249.82],
-                        [199.14555556,274.26],
-                        [224.,300.]]])]
-        # self.testarray=[np.array([[[0., 0.], [50.84487633, 50.50066381], [60.94161902, 60.37797936], [70.03836171, 70.25529491], [82.1351044 , 80.13261046]]])]
-                            # [[3.99750614, 8.40244838], [3.70858772, 6.58400636], [3.41966931, 4.76556435], [3.13075089, 2.94712233], [2.84183248, 1.12868032]],
-                            # [[9.8946591 , 8.96850668], [9.20652376, 7.90496581], [8.51838841, 6.84142493], [7.83025307, 5.77788406], [7.14211773, 4.71434319]],
-                            # [[4.53858008, 5.23847224], [4.70827311, 500.65541641], [4.87796614, 6.07236059], [5.04765917, 6.48930477], [5.2173522 , 6.90624895]]]
-                            
+        self.path_planner=Planners()
+
+        
     
 
     def run_simulation(self):
@@ -70,6 +61,7 @@ class CarSimulation(Environment):
             self.goal_pos=np.vstack([self.apf_goal_pos,self.ssta_goal_pos[:,:2]])
 
             self.update_poses(self.car_pos, self.goal_pos)
+            
 
             #intersection for visulaisation
             self.intersections_apf=self.apf_agents.control.intersection()
@@ -80,6 +72,8 @@ class CarSimulation(Environment):
             self.draw_map() # draws map with obstacles
             #takes the collision flags of apf and ssta but not considering all agents they are independant
             self.colllison_apf_ssta=np.hstack([self.apf_agents.control.agent_collision,self.ssta_agents.control.agent_collision])
+            
+
             self.draw_agents_with_goals(self.colllison_apf_ssta) # draws agents and their respective goal positions
             
             # setting the number of views/segment
@@ -104,26 +98,40 @@ class CarSimulation(Environment):
             # plot intersections that is local goal if self.debugging
             self.test_intersection_local_goal(intersections_views_global_points)
 
+            
+
             # print(self.ssta_car_pos)
             # print("-------")
-            print( self.ssta_agents.goal_pos)
-            print(camera_points_indices)
+            # print( self.ssta_agents.goal_pos)
+            # print(camera_points_indices)
             # print("-------")
-         
+
+            # put in planner functin here
+            #takes in ssta agents and returns the path
+            self.ssta_path_indices=self.ssta_agents.control.path_indices
+            print(self.ssta_path_indices)
+            local_path_test=self.path_planner.a_star( self.ssta_agents.goal_pos,self.path_size)
+            
+            
 
             #assume you get a path from T2no file
             #path shape is n,(m,2)  -n -no of views,m-no.of agents
-            self.ssta_agents.control.global_agent_paths=self.transform_local_to_global_path_vectorized(self.testarray,t_l,self.frame_angle)[0]
-            #the global path is stored as a list to access
-            # print(self.ssta_agents.global_agent_paths)
-            # for point_set in self.ssta_agents.control.global_agent_paths:
-            #     for x, y in point_set:
-            #         pygame.draw.circle(self.screen, self.colors['lgreen'], (x, y), 3)
+            self.ssta_agents.control.global_agent_paths=self.transform_local_to_global_path_vectorized(local_path_test,t_l,self.frame_angle)[0]
+            # print(self.ssta_agents.control.global_agent_paths)
+            # #the global path is stored as a list to access
+            # print(self.ssta_agents.control.global_agent_paths[0].shape)
+            # for point_set in self.ssta_agents.control.global_agent_paths[1]:
+            #     # print(point_set)
+            #     # for x, y in np.array((point_set)):
+            #     #     print(x,y)
+            #     pygame.draw.circle(self.screen, self.colors['lgreen'], (point_set[0], point_set[1]), 3)
+         
+            
             ### now with the lists mapped use the indices to have a global path variable
-            #creating path using T2NO (give local start and local goal# index 2,3-goalpoint,4,5-startcurr point-self.ssta_agents.goal_pos )
+            # creating path using T2NO (give local start and local goal# index 2,3-goalpoint,4,5-startcurr point-self.ssta_agents.goal_pos )
             # print(camera_points_indices)
             self.ssta_agents.control.camera_points_indices=camera_points_indices
-            #convert the local_path_points to global_path_points:(create a function to convert local to global)
+            # convert the local_path_points to global_path_points:(create a function to convert local to global)
             # self.ssta_car_pos,self.ssta_goal_pos = self.ssta_agents.switch_controller()
 
             #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -140,7 +148,6 @@ class CarSimulation(Environment):
             #     self.display_traffic_speed(speed)
             ##########metrics function need to be modified 
             #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
 
             ## Saving the images on views
             if self.save_data:

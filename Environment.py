@@ -21,7 +21,7 @@ class Environment():
         
         #df for csv files
         self.dataframe_columns = ["Index","TotalAgents","LocalPoints", "GlobalPoints"]
-        self.df = pd.DataFrame(columns=self.dataframe_columns)
+        # self.df = pd.DataFrame(columns=self.dataframe_columns)
 
         self.font = pygame.font.Font(None, 25)  # Smaller font size
         # Define colors
@@ -215,11 +215,13 @@ class Environment():
                         pygame.draw.circle(self.screen, self.colors["blue"], (x, y), 5)
 
     def draw_agents_with_goals(self,collision_flags):
+       
         for start, goal, collided in zip(self.cur_pos, self.goal_pos, collision_flags):
             if collided == False:
                 agent_color = self.colors[self.agent_colors[int(start[4])]]
             else:
                 agent_color = self.colors["red"]
+            
             if self.debugging:
                 pygame.draw.circle(self.screen, self.colors['black'], goal, 2)
             if start[6] == -1:
