@@ -235,7 +235,7 @@ class DoubleIntegratorSSTA:
         #stop when goal is reached
         return v
     
-    #stop when goal is reached
+    #stop when goal is reached 
     def terminate_agent_movement(self,v,goal_reached_idx):
         v[goal_reached_idx]=0.0,0.0,0.0,0.0
         return v
