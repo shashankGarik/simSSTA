@@ -29,12 +29,12 @@ class CarSimulation(Environment):
         self.infinity = LoopSimulation(800,800,120,1,1,42)
         self.apf_agents=APFAgents(obstacle_vec,DoubleIntegratorAPF,self.frame_rate,self.infinity)
         self.ssta_agents=SSTAAgents(obstacle_vec,DoubleIntegratorSSTA,self.frame_rate,self.infinity)
-        self.path_size=5
+        self.path_size=10
         self.ssta_agents.control.path_size=self.path_size
 
         self.timer=0
         # setting the number of views/segment(default 2 view)
-        self.twin_boxes = np.array([[-60,450,50,300]])
+        self.twin_boxes = np.array([[30,450,50,300],[-30,50,400,300]])
         # each side of box/view/segment 
         self.side_length = self.twin_boxes[:,-1]
         self.path_planner=Planners()
@@ -89,7 +89,7 @@ class CarSimulation(Environment):
             #first converting all the global points to local points
    
             local_cur_points_ssta = self.global_local_transform(global_cur_points_ssta,t_l,self.frame_angle)
-            # print(local_cur_points_ssta)
+            # print("local",local_cur_points_ssta.shape)
             #ssta agents local and global points
             local_cur_points, global_cur_points,global_goal_points,camera_points_indices=self.camera_agents(local_cur_points_ssta,self.side_length, self.ssta_car_pos,self.ssta_goal_pos)
             
@@ -99,38 +99,51 @@ class CarSimulation(Environment):
             self.test_intersection_local_goal(intersections_views_global_points)
 
             
-
+            #combine all camera view indices for SSTA agents
+            ###################################
+            
             # print(self.ssta_car_pos)
             # print("-------")
             # print( self.ssta_agents.goal_pos)
-            # print(camera_points_indices)
+            # print("camera",camera_points_indices,len(self.ssta_goal_pos))
+            # print("goalll",self.ssta_agents.goal_pos)
             # print("-------")
+
+            ###################################
+            
+
 
             # put in planner functin here
             #takes in ssta agents and returns the path
+            #input camera_points_indices,path_indices,
             self.ssta_path_indices=self.ssta_agents.control.path_indices
-            print(self.ssta_path_indices)
-            local_path_test=self.path_planner.a_star( self.ssta_agents.goal_pos,self.path_size)
+            ##returns local path
+            #return as view,n,m,2
+            local_path_test=self.path_planner.a_star( self.ssta_agents.goal_pos,camera_points_indices,self.path_size)
             
             
 
             #assume you get a path from T2no file
             #path shape is n,(m,2)  -n -no of views,m-no.of agents
-            self.ssta_agents.control.global_agent_paths=self.transform_local_to_global_path_vectorized(local_path_test,t_l,self.frame_angle)[0]
-            # print(self.ssta_agents.control.global_agent_paths)
+            self.ssta_agents.control.global_agent_paths,self.ssta_agents.control.combined_camera_indices=self.transform_local_to_global_path_vectorized(local_path_test,camera_points_indices,t_l,self.frame_angle,n=len(self.ssta_goal_pos),k=self.path_size)
+            # print("global", self.ssta_agents.control.global_agent_paths)
+            # print("camera", self.ssta_agents.control.combined_camera_indices)
+
+            
             # #the global path is stored as a list to access
-            # print(self.ssta_agents.control.global_agent_paths[0].shape)
-            # for point_set in self.ssta_agents.control.global_agent_paths[1]:
-            #     # print(point_set)
-            #     # for x, y in np.array((point_set)):
-            #     #     print(x,y)
-            #     pygame.draw.circle(self.screen, self.colors['lgreen'], (point_set[0], point_set[1]), 3)
+            # print(self.ssta_agents.control.global_agent_paths)
+            if self.ssta_agents.control.global_agent_paths[0][0][0]!=None:
+                for point_set in self.ssta_agents.control.global_agent_paths[0]:
+                    # print(point_set)
+                    # for x, y in np.array((point_set)):
+                    #     print(x,y)
+                    pygame.draw.circle(self.screen, self.colors['lgreen'], (point_set[0], point_set[1]), 3)
          
             
             ### now with the lists mapped use the indices to have a global path variable
             # creating path using T2NO (give local start and local goal# index 2,3-goalpoint,4,5-startcurr point-self.ssta_agents.goal_pos )
             # print(camera_points_indices)
-            self.ssta_agents.control.camera_points_indices=camera_points_indices
+            
             # convert the local_path_points to global_path_points:(create a function to convert local to global)
             # self.ssta_car_pos,self.ssta_goal_pos = self.ssta_agents.switch_controller()
 

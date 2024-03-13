@@ -86,7 +86,8 @@ class DoubleIntegratorAPF:
         
         self.agent_collision=np.array([False]*self.x.shape[0])
 
-        v=self.collision_detection(v,agent_distance,rectangle_distance,circle_distance,goal_reached_idx)
+        v=self.collision_detection(v,agent_distance,rectangle_distance,circle_distance)
+        v=self.terminate_agent_movement(v,goal_reached_idx)
         if self.x.shape[1] > 4:
             self.x = np.hstack([self.x[:,:4] + self.dt * v,self.x[:,4:]])
         else:
@@ -155,7 +156,7 @@ class DoubleIntegratorAPF:
         speed=np.average(velocity_magnitude)
         return speed
     
-    def collision_detection(self,v,agent_distance,rectangle_distance,circle_distance,goal_reached_idx):
+    def collision_detection(self,v,agent_distance,rectangle_distance,circle_distance):
         self.agent_collision=DoubleIntegratorAPF.collision_analysis(self.agent_collision,agent_distance,rectangle_distance,circle_distance)
         self.agent_collision[self.outside_frame_x_indices]=False
         # print(self.agent_collision.shape)
@@ -164,7 +165,10 @@ class DoubleIntegratorAPF:
             v=v.reshape(1,v.shape[0])
         #collision stop-uncomment below line if you want collided agents to stop
         # v[self.true_indices_agent_collision]=0.0,0.0,0.0,0.0
-        #stop when goal is reached
+        return v
+    
+    #stop when goal is reached
+    def terminate_agent_movement(self,v,goal_reached_idx):
         v[goal_reached_idx]=0.0,0.0,0.0,0.0
         return v
     
