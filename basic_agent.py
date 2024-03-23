@@ -7,7 +7,7 @@ from loop_agents import *
 from Environment import Environment
 from APF_agents import *
 from SSTA_agents import *
-from path_planners import *
+from Planners.path_planners import *
 
 class CarSimulation(Environment):
     def __init__(self, obstacle_vec):
@@ -19,6 +19,8 @@ class CarSimulation(Environment):
 
         self.debugging = True
         self.save_data = False
+        self.enable_ssta_agents=True
+
 
         # Set up car and goal positions
         self.car_pos = None
@@ -29,19 +31,19 @@ class CarSimulation(Environment):
         self.infinity = LoopSimulation(800,800,120,1,1,42)
         self.apf_agents=APFAgents(obstacle_vec,DoubleIntegratorAPF,self.frame_rate,self.infinity)
         self.ssta_agents=SSTAAgents(obstacle_vec,DoubleIntegratorSSTA,self.frame_rate,self.infinity)
-        self.path_size=10
+        self.path_size=21
+        self.replanning_index=5
         self.ssta_agents.control.path_size=self.path_size
+        self.ssta_agents.control.replanning_index=self.replanning_index
+
 
         self.timer=0
         # setting the number of views/segment(default 2 view)
         self.twin_boxes = np.array([[30,450,50,300],[-30,50,400,300]])
         # each side of box/view/segment 
         self.side_length = self.twin_boxes[:,-1]
-        self.path_planner=Planners()
-
-        
-    
-
+        self.path_planner=Planners(self.path_size,self.replanning_index)
+     
     def run_simulation(self):
         print('running')
         # Main simulation loop
@@ -52,101 +54,79 @@ class CarSimulation(Environment):
                 if event.type == pygame.QUIT:
                     running = False
 
-            # Update/Obtain APF car position
+            # Update/Obtain APF and SSTA car position
             self.apf_car_pos,self.apf_goal_pos = self.apf_agents.generate_agents(self.timer)
-            self.ssta_car_pos,self.ssta_goal_pos = self.ssta_agents.generate_agents(self.timer)
+            if self.enable_ssta_agents:
+                self.ssta_car_pos,self.ssta_goal_pos = self.ssta_agents.generate_agents(self.timer)
 
             #concatenating apf and ssta agents
-            self.car_pos=np.vstack([self.apf_car_pos,self.ssta_car_pos])
-            self.goal_pos=np.vstack([self.apf_goal_pos,self.ssta_goal_pos[:,:2]])
+            if self.enable_ssta_agents:
+                self.car_pos=np.vstack([self.apf_car_pos,self.ssta_car_pos])
+                self.goal_pos=np.vstack([self.apf_goal_pos,self.ssta_goal_pos[:,:2]])
+            else:
+                self.car_pos=self.apf_car_pos
+                self.goal_pos=self.apf_goal_pos
 
+            # print("lennnnnnnn",len(self.ssta_car_pos))
             self.update_poses(self.car_pos, self.goal_pos)
-            
-
-            #intersection for visulaisation
-            self.intersections_apf=self.apf_agents.control.intersection()
-            self.intersections_ssta=self.ssta_agents.control.intersection()
-            self.intersections=np.hstack([self.intersections_apf,self.intersections_ssta])
-
-
-            self.draw_map() # draws map with obstacles
-            #takes the collision flags of apf and ssta but not considering all agents they are independant
-            self.colllison_apf_ssta=np.hstack([self.apf_agents.control.agent_collision,self.ssta_agents.control.agent_collision])
-            
-
-            self.draw_agents_with_goals(self.colllison_apf_ssta) # draws agents and their respective goal positions
-            
             # setting the number of views/segment
             self.frame_angle,centers,(t_l,t_r,b_l,b_r)=self.segment_frame(self.twin_boxes)
-            # plotting the segment
+    
+            #intersection for visulaisation
+            if self.enable_ssta_agents:
+                self.intersections_ssta=self.ssta_agents.control.intersection()
+                self.intersections_apf=self.apf_agents.control.intersection()
+                self.intersections=np.hstack([self.intersections_apf,self.intersections_ssta])
+                #takes the collision flags of apf and ssta but not considering all agents they are independant
+                self.colllison_apf_ssta=np.hstack([self.apf_agents.control.agent_collision,self.ssta_agents.control.agent_collision])
+                            
+                #local points of all self.ssta.curpos
+                global_cur_points_ssta=self.ssta_car_pos[:,:2]
+
+                #first converting all the global points to local points
+                local_cur_points_ssta = self.global_local_transform(global_cur_points_ssta,t_l,self.frame_angle)
+                # print("local",local_cur_points_ssta.shape)
+
+                #ssta agents local and global points
+                local_cur_points, global_cur_points,global_goal_points,camera_points_indices=self.camera_agents(local_cur_points_ssta,self.side_length, self.ssta_car_pos,self.ssta_goal_pos)
+                
+                # print("SSSSSSSSSSSSSSSSSSSSSSSSSSSS",self.ssta_goal_pos)
+                
+                self.ssta_agents.goal_pos,_,self.ssta_agents.control.combined_camera_indices=self.global_local_goal(self.ssta_goal_pos,camera_points_indices,local_cur_points,global_cur_points,global_goal_points,(t_l,t_r,b_l,b_r),self.frame_angle)
+    
+                self.ssta_path_indices=self.ssta_agents.control.path_indices
+                
+                ##returns local path
+                #return as view,n,m,2
+                local_path_test=self.path_planner.a_star( self.ssta_agents.goal_pos,camera_points_indices, self.timer,self.ssta_path_indices)
+                
+                self.ssta_agents.control.global_agent_paths=self.transform_local_to_global_path_vectorized(local_path_test,camera_points_indices,t_l,self.frame_angle,n=len(self.ssta_goal_pos),k=self.path_size)
+                # print("global", self.ssta_agents.control.global_agent_paths)
+                # print("camera", self.ssta_agents.control.combined_camera_indices)
+
+            else:
+                #without SSTA
+                self.intersections=self.apf_agents.control.intersection()
+                self.colllison_apf_ssta=self.apf_agents.control.agent_collision
+            
+            self.draw_map() # draws map with obstacles
+            self.draw_agents_with_goals(self.colllison_apf_ssta) # draws agents and their respective goal positions
+              # plotting the segment
             self.plot_segment_frame(centers,(t_l,t_r,b_l,b_r))
-            
-            
-            #local points of all self.ssta.curpos
-            global_cur_points_ssta=self.ssta_car_pos[:,:2]
+           
 
-
-            #first converting all the global points to local points
-   
-            local_cur_points_ssta = self.global_local_transform(global_cur_points_ssta,t_l,self.frame_angle)
-            # print("local",local_cur_points_ssta.shape)
-            #ssta agents local and global points
-            local_cur_points, global_cur_points,global_goal_points,camera_points_indices=self.camera_agents(local_cur_points_ssta,self.side_length, self.ssta_car_pos,self.ssta_goal_pos)
-            
-            self.ssta_agents.goal_pos,intersections_views_global_points=self.global_local_goal(self.ssta_goal_pos,camera_points_indices,local_cur_points,global_cur_points,global_goal_points,(t_l,t_r,b_l,b_r),self.frame_angle)
-            
-            # plot intersections that is local goal if self.debugging
-            self.test_intersection_local_goal(intersections_views_global_points)
-
-            
-            #combine all camera view indices for SSTA agents
-            ###################################
-            
-            # print(self.ssta_car_pos)
-            # print("-------")
-            # print( self.ssta_agents.goal_pos)
-            # print("camera",camera_points_indices,len(self.ssta_goal_pos))
-            # print("goalll",self.ssta_agents.goal_pos)
-            # print("-------")
-
-            ###################################
-            
-
-
-            # put in planner functin here
-            #takes in ssta agents and returns the path
-            #input camera_points_indices,path_indices,
-            self.ssta_path_indices=self.ssta_agents.control.path_indices
-            ##returns local path
-            #return as view,n,m,2
-            local_path_test=self.path_planner.a_star( self.ssta_agents.goal_pos,camera_points_indices,self.path_size)
-            
-            
-
-            #assume you get a path from T2no file
-            #path shape is n,(m,2)  -n -no of views,m-no.of agents
-            self.ssta_agents.control.global_agent_paths,self.ssta_agents.control.combined_camera_indices=self.transform_local_to_global_path_vectorized(local_path_test,camera_points_indices,t_l,self.frame_angle,n=len(self.ssta_goal_pos),k=self.path_size)
-            # print("global", self.ssta_agents.control.global_agent_paths)
-            # print("camera", self.ssta_agents.control.combined_camera_indices)
-
-            
-            # #the global path is stored as a list to access
+            #the global path is stored as a list to access
             # print(self.ssta_agents.control.global_agent_paths)
-            if self.ssta_agents.control.global_agent_paths[0][0][0]!=None:
-                for point_set in self.ssta_agents.control.global_agent_paths[0]:
-                    # print(point_set)
-                    # for x, y in np.array((point_set)):
-                    #     print(x,y)
-                    pygame.draw.circle(self.screen, self.colors['lgreen'], (point_set[0], point_set[1]), 3)
+            if self.enable_ssta_agents:
+                # plot intersections that is local goal if self.debugging
+                # self.test_intersection_local_goal(intersections_views_global_points)
+                if len(self.ssta_car_pos)!=0 and self.ssta_agents.control.global_agent_paths[0][0][0]!=None:
+                    for point_set in self.ssta_agents.control.global_agent_paths[0]:
+                        # for x, y in np.array((point_set)):
+                        #     print(x,y)
+                        pygame.draw.circle(self.screen, self.colors['lgreen'], (point_set[0], point_set[1]), 3)
          
-            
-            ### now with the lists mapped use the indices to have a global path variable
-            # creating path using T2NO (give local start and local goal# index 2,3-goalpoint,4,5-startcurr point-self.ssta_agents.goal_pos )
-            # print(camera_points_indices)
-            
-            # convert the local_path_points to global_path_points:(create a function to convert local to global)
-            # self.ssta_car_pos,self.ssta_goal_pos = self.ssta_agents.switch_controller()
-
+        
             #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
             ##########metrics function need to be modified 
 
@@ -162,15 +142,17 @@ class CarSimulation(Environment):
             ##########metrics function need to be modified 
             #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-            ## Saving the images on views
+            ########## Saving the images on views and csv file
             if self.save_data:
                 #getting the agents in the frame
                 # print(camera_x_local,len(camera_x_local))
                 #saving camera1 dataset
-                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 10, 5, 5, 5)#side_length,square dimensions,timer,train,test,val,gap(buffer)
+                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 6000, 0, 0, 0)#side_length,square dimensions,timer,train,test,val,gap(buffer)
                 # saving camera csv file (TO DOOOOOOO)
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
-          
+
+            ############################################
+            
             pygame.display.update()
             self.clock.tick(self.frame_rate)
             self.timer+=1

@@ -147,13 +147,14 @@ class Environment():
             rotated_points = np.dot(local_points, rotation_matrix.T)
             # Apply translation
             global_path_view_points = rotated_points + translation_vector
+            # print(global_path_view_points.shape,global_path_matrix.shape)
             # remove this below condition later
             if len(ssta_camera_indices[view][0])!=0:
                 global_path_matrix[ssta_camera_indices[view][0]]=global_path_view_points
-        combined_camera_indices = np.concatenate([arr[0] for arr in ssta_camera_indices])
+        
         # print(global_path_matrix.shape)
         
-        return global_path_matrix,combined_camera_indices
+        return global_path_matrix
 
     ################ Display Metrics ########################
     def display_collision_rate(self,collision_value):
@@ -198,7 +199,7 @@ class Environment():
                     pygame.draw.circle(self.screen, self.colors['black'], (x, y), 3)
 
     def plot_segment_frame(self,center,box_points, frame_color = 'black'):
-        # print(center)
+        # print("inside")
         t_l,t_r,b_l,b_r = box_points
         box_points = np.array([t_l,t_r,b_r,b_l]).transpose(1,0,2)   
         # frames = np.array([[center, box_points]])
@@ -294,23 +295,42 @@ class Environment():
     def global_local_goal(self,ssta_goal_pos,camera_points_indices,local_cur_points,agents_global_points,goal_global_points,frame_edges,frame_angle):
         #finds the new local global goal in the box and replaces in the ssta goal pose local goal points first as None
         intersections_all=[]
-        ssta_goal_pos[:,2:]=np.full((len(ssta_goal_pos),5), None)#if agent exits box everything will become none
+        #mask where all indices are not in the camera indices to make anything outside indices as None
+        combined_camera_indices = np.concatenate([arr[0] for arr in camera_points_indices])
+        mask = np.ones(len(ssta_goal_pos), dtype=bool)
+        mask[combined_camera_indices] = False
+        ssta_goal_pos[mask,2:]=np.full(((abs(len(ssta_goal_pos)-len(combined_camera_indices))),5), None)#if agent exits box everything will become none
+
+
+
         for view in range(len(agents_global_points)):
+            local_goal_view=ssta_goal_pos[camera_points_indices[view],-1].flatten()
+            
+            # local_mask=np.full(len(camera_points_indices[view]),False ,dtype=bool)
+            
+            none_indices=np.argwhere(local_goal_view==None)
+            
+            camera_temp_indices=camera_points_indices[view][0].flatten()
+            camera_temp_indices=camera_temp_indices[none_indices]
+            # print(camera_temp)
             (t_l,t_r,b_l,b_r)=frame_edges
             segment = [agents_global_points[view][:,:2],goal_global_points[view] ]  # Line segment defined by its two end points
             square = [(t_l[view][0],t_l[view][1]),(t_r[view][0],t_r[view][1]),(b_r[view][0],b_r[view][1]),(b_l[view][0],b_l[view][1])]  # Square defined by its four corners
             # Find intersections
             intersection_view = self.find_segment_square_intersection(segment, square)
+            # print(intersection_view.shape)
             # print("Intersection Points:", intersections)
             intersections_all.append(intersection_view)
+            # intersections_global_frame[none_indices_camera_view]=intersection_view
+            # intersections_all.append(intersection_view)
             #converting view_goal_global_point to view_goal_local_Point
             goal_view_points_ssta = self.global_local_transform(intersection_view,t_l,frame_angle)
-        
-            ssta_goal_pos[camera_points_indices[view],2:4]=np.round(np.float64(goal_view_points_ssta[view]),2) #adding global local
+            ssta_goal_pos[camera_temp_indices,2:4]=np.round(np.float64(goal_view_points_ssta[view][none_indices]),2) #adding global local
             ssta_goal_pos[camera_points_indices[view],4:6]=np.round(local_cur_points[view],2) # adding local curr point
             ssta_goal_pos[camera_points_indices[view],6]=np.full((len(intersection_view),), view)
-
-        return ssta_goal_pos,intersections_all
+   
+        
+        return ssta_goal_pos,intersections_all,combined_camera_indices
    
 
         

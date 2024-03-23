@@ -38,17 +38,18 @@ class DoubleIntegratorSSTA:
         self.apf_Kp= np.array([[1.5, 0],
                              [0, 1.5]])
         
-        self.ssta_Kp= np.array([[15, 0],
-                             [0, 15]])
+        self.ssta_Kp= np.array([[5, 0],
+                             [0, 5]])
         
         # derivative gains
         self.apf_Kd = np.array([[10, 0],
                               [0, 10]])
         
-        self.ssta_Kd = np.array([[8, 0],
-                              [0, 8]])
+        self.ssta_Kd = np.array([[12, 0],
+                              [0, 12]])
 
     def step_apf(self): 
+        self.frame_agents()
         
         self.total_time+=self.dt
         obstacle_potential = 0
@@ -107,9 +108,11 @@ class DoubleIntegratorSSTA:
 
     def step_ssta(self): 
         
-        # print("XXXXpathindicesXXXX",self.path_indices)
+        print("XXXXpathindicesXXXX",self.path_indices)
         
-        
+        reset_path_indices=np.argwhere(self.path_indices==self.replanning_index)
+        self.path_indices[reset_path_indices]=0
+
         self.global_agent_paths[:,-1]=self.ssta_agents_goal_pos[:,:2]
 
         self.camera_indices_global_path=self.global_agent_paths[self.combined_camera_indices]
@@ -138,8 +141,10 @@ class DoubleIntegratorSSTA:
         # switching between goals
         mask_dist2goal=np.full((self.x.shape[0],2),np.inf)
         mask_dist2goal[self.ssta_indices]=dist2goal
-        increase_goal=np.where(mask_dist2goal<=3)
+        increase_goal=np.where(mask_dist2goal<=4)
         self.path_indices[increase_goal[0]]+=1
+        # print(  "inside",self.path_indices)
+        # print(self.camera_indices_global_path)
 
     def car_pos(self):
         ##split self.x as apf and ssta
@@ -225,9 +230,10 @@ class DoubleIntegratorSSTA:
     
     def collision_detection(self,v,agent_distance,rectangle_distance,circle_distance):
         self.apf_agent_collision=DoubleIntegratorSSTA.collision_analysis(self.apf_agent_collision,agent_distance,rectangle_distance,circle_distance)
-        self.apf_agent_collision[self.outside_frame_x_indices]=False
+        # print( self.apf_agent_collision,self.outside_frame_x_indices)
+        # self.apf_agent_collision[self.outside_frame_x_indices]=False
         # print(self.agent_collision.shape)
-        self.true_indices_agent_collision = np.where(self.apf_agent_collision)
+        # self.true_indices_agent_collision = np.where(self.apf_agent_collision)
         if len(v.shape)<2:
             v=v.reshape(1,v.shape[0])
         #collision stop-uncomment below line if you want collided agents to stop
