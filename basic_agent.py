@@ -19,7 +19,7 @@ class CarSimulation(Environment):
 
         self.debugging = True
         self.save_data = False
-        self.enable_ssta_agents=True
+        self.enable_ssta_agents=False
 
 
         # Set up car and goal positions
