@@ -16,9 +16,6 @@ class DoubleIntegratorAPF:
         self.total_time=0.0
         self.total_collision=0.0
         self.agent_collision=np.array([False]*self.x.shape[0])
-        self.frame_h=800
-        self.frame_w=800
-        
 
         self.A = np.array([[0, 0, 1, 0],
                            [0, 0, 0, 1],
@@ -43,7 +40,7 @@ class DoubleIntegratorAPF:
         self.frame_agents()
         self.total_time+=self.dt
         obstacle_potential = 0
-        rectangle_distance,circle_distance,agent_distance=None,None,None
+        rectangle_distance,circle_distance=None,None
 
         if len(self.obs_circle) != 0:
             c_obstacle_potential,circle_distance = DoubleIntegratorAPF.avoid_circle(200, 500000, self.obs_circle, self.x)     
@@ -64,18 +61,24 @@ class DoubleIntegratorAPF:
         prop_potential = np.zeros((self.x[:,:4].shape[0],2))
         diff_potential = np.zeros((self.x[:,:4].shape[0],2))
 
-        agent_potential,agent_distance = DoubleIntegratorAPF.avoid_agents(9, 60000, self.x)#100000
+        
+        #without the ssta apf agents
+         # agent_potential,agent_distance = DoubleIntegratorAPF.avoid_agents(9, 60000, self.x)#100000
+        # self.apf_agent_potential,self.apf_agent_distance = DoubleIntegratorAPF.avoid_agents(9, 60000, self.x)#100000
+
+
+
         prop_potential = np.squeeze(np.dot(self.Kp_1[np.newaxis, :,:], error[:,:,np.newaxis])).T
         prop_potential = self.desired_force(1000)
 
         diff_potential = np.squeeze(np.dot(self.Kd_1[np.newaxis,:,:], v_error[:,:,np.newaxis])).T
 
         if len(goal_close_idx) > 0:
-            agent_potential[goal_close_idx] = 0.0
+            self.apf_agent_potential[goal_close_idx] = 0.0
             if type(obstacle_potential) == np.ndarray:
                 obstacle_potential[goal_close_idx] = np.array([0.0,0.0])
 
-        control_input = prop_potential + diff_potential + obstacle_potential + agent_potential
+        control_input = prop_potential + diff_potential + obstacle_potential + self.apf_agent_potential
 
         A_x = np.squeeze(np.dot(self.A[np.newaxis,:,:], self.x[:,:4,np.newaxis]))
         B_u = np.squeeze(np.dot(self.B[np.newaxis,:,:], control_input[:,:, np.newaxis]))
@@ -86,7 +89,7 @@ class DoubleIntegratorAPF:
         
         self.agent_collision=np.array([False]*self.x.shape[0])
 
-        v=self.collision_detection(v,agent_distance,rectangle_distance,circle_distance)
+        v=self.collision_detection(v,self.apf_agent_distance,rectangle_distance,circle_distance)
         v=self.terminate_agent_movement(v,goal_reached_idx)
         if self.x.shape[1] > 4:
             self.x = np.hstack([self.x[:,:4] + self.dt * v,self.x[:,4:]])
@@ -97,7 +100,7 @@ class DoubleIntegratorAPF:
         self.frame_agents()
 
     def car_pos(self):
-        # split self.x as 
+        # split self.x as
         if len(self.x)!=None:
             self.step_apf()
         return  self.x,self.goal_pos
@@ -130,13 +133,13 @@ class DoubleIntegratorAPF:
         return self.intersections
     
     def volume_capacity(self):
-        self.capacity=min(self.frame_h/3,self.frame_w/3)
+        self.capacity=int(min(self.frame_h/4,self.frame_w/4))
         #volume inside the frame
         x_row ,y_row = self.x[:, 0], self.x[:, 1]
         volume_condition = np.logical_and(x_row >= 0, x_row <= self.frame_w) & np.logical_and(y_row >= 0, y_row <= self.frame_h)
         self.volume = np.sum(volume_condition)
      
-        return self.capacity,self.volume
+        return self.volume,self.capacity
     
     def collision_status(self):
         return self.agent_collision
@@ -151,6 +154,7 @@ class DoubleIntegratorAPF:
 
 
     def traffic_speed(self):
+        self.frame_agents()
         v_x ,v_y = self.frame_x[:, 2], self.frame_x[:, 3]
         velocity_magnitude = np.sqrt(v_x**2 + v_y**2)
         speed=np.average(velocity_magnitude)
@@ -177,6 +181,39 @@ class DoubleIntegratorAPF:
         dist2goal = np.linalg.norm(error, axis = 1)
         dir = error/dist2goal[:, np.newaxis]
         return dir*strength
+    
+    #another static function
+    def avoid_agents(self,m_factor, strength, x_c):
+        """
+        Calculates the potential for all agents with respect to other agents
+
+        Args:
+            radii (float or int or np.ndarray): vector/number representing radius 
+                of each obstacle. if ndarray, shape must be (n,1).
+            strength (float or int or np.ndarray): vector/number representing repulsive
+                strength of each agent. if ndarray, shape must be (n,1).
+            x_c (np.ndarray): numpy array of obstacle centroids of shape (n,4).
+
+        Returns:
+            np.ndarray: combined resulting potential of obstacles for each agent of shape (n,2)
+            dist:distance between each and every agent
+        """
+        radii = x_c[:,5]
+        strength_factor = radii/10
+        radii = radii*m_factor
+
+        if len(x_c) == 1:
+            return np.array([[0.0]]),None
+        diff = x_c[:,:2][:,np.newaxis,:] - x_c[:,:2][np.newaxis,:,:]
+        dist = np.squeeze(np.linalg.norm(diff, axis = 2)[:,:,np.newaxis])
+        np.fill_diagonal(dist, np.inf)
+        dir = diff/dist[:,:,np.newaxis]
+        potential = (1.0 / dist - 1.0 / radii)
+        potential[potential < 0] = 0
+        collision_potentials = strength * (potential) * strength_factor
+        agent_potential = np.sum(collision_potentials[:,:,np.newaxis]*dir, axis = 1)
+
+        return agent_potential,dist
  
     @staticmethod
     def avoid_circle(radii, strength, obs_c, x_c):
@@ -217,37 +254,7 @@ class DoubleIntegratorAPF:
         obstacle_potential = np.sum(dir*mag*strength, axis = 0)
         return obstacle_potential,dist,intersections
     
-    def avoid_agents(m_factor, strength, x_c):
-        """
-        Calculates the potential for all agents with respect to other agents
-
-        Args:
-            radii (float or int or np.ndarray): vector/number representing radius 
-                of each obstacle. if ndarray, shape must be (n,1).
-            strength (float or int or np.ndarray): vector/number representing repulsive
-                strength of each agent. if ndarray, shape must be (n,1).
-            x_c (np.ndarray): numpy array of obstacle centroids of shape (n,4).
-
-        Returns:
-            np.ndarray: combined resulting potential of obstacles for each agent of shape (n,2)
-            dist:distance between each and every agent
-        """
-        radii = x_c[:,5]
-        strength_factor = radii/10
-        radii = radii*m_factor
-
-        if len(x_c) == 1:
-            return np.array([[0.0]]),None
-        diff = x_c[:,:2][:,np.newaxis,:] - x_c[:,:2][np.newaxis,:,:]
-        dist = np.squeeze(np.linalg.norm(diff, axis = 2)[:,:,np.newaxis])
-        np.fill_diagonal(dist, np.inf)
-        dir = diff/dist[:,:,np.newaxis]
-        potential = (1.0 / dist - 1.0 / radii)
-        potential[potential < 0] = 0
-        collision_potentials = strength * (potential) * strength_factor
-        agent_potential = np.sum(collision_potentials[:,:,np.newaxis]*dir, axis = 1)
-
-        return agent_potential,dist
+    
 
     def collision_analysis(agent_collision,agent_dist,rect_dist,circ_distance):
         threshold_rect_obstacle =10

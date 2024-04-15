@@ -159,28 +159,28 @@ class Environment():
     ################ Display Metrics ########################
     def display_collision_rate(self,collision_value):
         collison_text ="CR="+str(np.round(collision_value*60,0))+"coll/min"
-        collison_render = self.font.render(collison_text, True, (255, 255, 255))
+        collison_render = self.font.render(collison_text, True, (0, 0, 0))
         col_rect = collison_render.get_rect()
         col_rect.topright = ( self.width-100, 30) 
         self.screen.blit(collison_render, col_rect)
 
     def display_total_time  (self,time):
         time_text ="t="+str(np.round(time,0))+"s"
-        time_render = self.font.render(time_text, True, (255, 255, 255))
+        time_render = self.font.render(time_text, True, (0, 0, 0))
         self.col_rect = time_render.get_rect()
         self.col_rect.topright = ( self.width-100, 10) 
         self.screen.blit(time_render, self.col_rect)
     
     def display_v_c_ratio(self,volume,capacity):
         v_c_text ="v/c="+str(  np.round(volume/capacity,2))
-        v_c_render = self.font.render(v_c_text, True, (255, 255, 255))
+        v_c_render = self.font.render(v_c_text, True, (0, 0, 0))
         self.v_c_rect = v_c_render.get_rect()
         self.v_c_rect.topright = ( self.width-100, 50) 
         self.screen.blit(v_c_render, self.v_c_rect )
 
     def display_traffic_speed(self,speed):
         speed_text ="v="+str(  np.round(speed,0))+"m/s"
-        speed_render = self.font.render(speed_text, True, (255, 255, 255))
+        speed_render = self.font.render(speed_text, True, (0, 0, 0))
         speed_rect = speed_render.get_rect()
         speed_rect.topright = (self.width-100, 70)
         self.screen.blit(speed_render, speed_rect)
