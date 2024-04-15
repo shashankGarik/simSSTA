@@ -9,7 +9,7 @@ class SSTAAgents():
         # self.goal_pos = np.array([[1500, 600,None,None,None,None,None],[1500, 400,None,None,None,None,None],[1500, 500,None,None,None,None,None]]) # globalgx,globalgy,goalviewlocalgx,goalviewlocalgy,currlocalviewx,currlocalviewy,view/segment
         self.car_pos = np.array([[-10.0, 100.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
         # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal,y,local_goal_x(intersection_x),local_goal_y(intersection_y)
-        self.goal_pos = np.array([[1000, 150,None,None,None,None,None]]) 
+        self.goal_pos = np.array([[1000, 150,np.nan,np.nan,np.nan,np.nan,np.nan]]) 
         # self.car_pos = np.array([[-10.0, 300.0, 0.0, 0.0,6, 15, -1],[-50.0, 0.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
         # # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal,y,local_goal_x(intersection_x),local_goal_y(intersection_y)
         # self.goal_pos = np.array([[1000, 100,None,None,None,None,None],[200, 800,None,None,None,None,None]]) 

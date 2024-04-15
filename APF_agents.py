@@ -14,7 +14,7 @@ class APFAgents():
         self.infinity = infinity
         self.control = self.controller(self.car_pos, self.goal_pos, self.obstacles)
         self.control.dt = 1/frame_rate
-        self.random_agent_generate_time=250 #change to generate varied agents at shorter or longer time
+        self.random_agent_generate_time=100 #change to generate varied agents at shorter or longer time
         self.generate_flag=True
 
     def generate_agents(self,timer):

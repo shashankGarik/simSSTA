@@ -2,6 +2,8 @@
 https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_video/py_bg_subtraction/py_bg_subtraction.html
 '''
 import numpy as np
+# import cupy as np
+
 import cv2, os, json
 import queue
 import moviepy.editor as mpy

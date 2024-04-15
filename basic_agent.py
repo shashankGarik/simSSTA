@@ -1,5 +1,6 @@
 import pygame
 import numpy as np
+
 from controllers_APF import *
 from controllers_SSTA import *
 # from test_cases import *
@@ -8,6 +9,13 @@ from Environment import Environment
 from APF_agents import *
 from SSTA_agents import *
 from Planners.path_planners import *
+from predict import *
+# from inference.VAE_model import *
+# from inference.models import *
+from config import args
+import sys
+sys.path.append('/home/knagaraj31/simSSTA/inference/VAE_model.py')
+
 
 class CarSimulation(Environment):
     def __init__(self, obstacle_vec):
@@ -17,9 +25,10 @@ class CarSimulation(Environment):
         pygame.init()
         pygame.display.set_caption("Car Simulation")#Windows heading
 
-        self.debugging = True
+        self.debugging = False
         self.save_data = False
         self.enable_ssta_agents=False
+        self.do_inference = True
 
 
         # Set up car and goal positions
@@ -28,7 +37,7 @@ class CarSimulation(Environment):
         self.obstacles = obstacle_vec
         self.clock = pygame.time.Clock()
         self.frame_rate= 60
-        self.infinity = LoopSimulation(800,800,120,1,1,42)
+        self.infinity = LoopSimulation(800,800,120,1,1,100)
         self.apf_agents=APFAgents(obstacle_vec,DoubleIntegratorAPF,self.frame_rate,self.infinity)
         self.ssta_agents=SSTAAgents(obstacle_vec,DoubleIntegratorSSTA,self.frame_rate,self.infinity)
         self.path_size=21
@@ -39,10 +48,13 @@ class CarSimulation(Environment):
 
         self.timer=0
         # setting the number of views/segment(default 2 view)
-        self.twin_boxes = np.array([[30,450,50,300],[-30,50,400,300]])
+        self.twin_boxes = np.array([[-60,300,400,300],[-60,450,50,300]])
         # each side of box/view/segment 
         self.side_length = self.twin_boxes[:,-1]
         self.path_planner=Planners(self.path_size,self.replanning_index)
+
+        if self.do_inference:
+            self.predictor = SSTA_predictor(args)
      
     def run_simulation(self):
         print('running')
@@ -147,9 +159,15 @@ class CarSimulation(Environment):
                 #getting the agents in the frame
                 # print(camera_x_local,len(camera_x_local))
                 #saving camera1 dataset
-                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 6000, 0, 0, 0)#side_length,square dimensions,timer,train,test,val,gap(buffer)
+                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 3, 3, 3, 0)#side_length,square dimensions,timer,train,test,val,gap(buffer)
                 # saving camera csv file (TO DOOOOOOO)
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
+
+            if self.do_inference:
+                inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
+                predictions = self.predictor.get_predictions(np.array(inputs))
+            #     # print(np.array(outputs).shape)
+
 
             ############################################
             

@@ -7,10 +7,10 @@ obs = {'circle': np.array([[200,500]]),
        'rectangle': np.array([[600.0, 500.0,80.0,80.0],[500.0, 350.0,160.0,160.0]])}
 
 # # Case 2:
-start_left = [np.array([50.0,i,0.0,0.0]) for i in range(50,950,200)]
-start_right = [np.array([950,i,0.0,0.0]) for i in range(150,950,200)]
-start_top = [np.array([i,50.0,0.0,0.0]) for i in range(150,950,200)]
-start_bottom = [np.array([i,950.0,0.0,0.0]) for i in range(150,950,200)]
+start_left = np.array([np.array([50.0,i,0.0,0.0]) for i in range(50,950,200)])
+start_right = np.array([np.array([950,i,0.0,0.0]) for i in range(150,950,200)])
+start_top = np.array([np.array([i,50.0,0.0,0.0]) for i in range(150,950,200)])
+start_bottom = np.array([np.array([i,950.0,0.0,0.0]) for i in range(150,950,200)])
 
 goal_left = np.array([np.array([950.0,i]) for i in range(50,950,200)])
 goal_right = np.array([np.array([50.0,i]) for i in range(150,950,200)])

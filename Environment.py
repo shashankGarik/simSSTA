@@ -335,7 +335,27 @@ class Environment():
 
         
 # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -X- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-        
+    def get_frame(self, frame_sizes ,frame_corners):
+        t_l,t_r,b_l,b_r = frame_corners # unpacking corners for all frames
+        outputs = []
+        for idx in range(len(frame_sizes)): #iterating for each box
+                width, height = frame_sizes[idx], frame_sizes[idx] 
+                tl,tr,bl,br = t_l[idx],t_r[idx],b_l[idx],b_r[idx]
+
+                screen_array = pygame.surfarray.array3d(self.screen)
+                transposed_array = np.transpose(screen_array, (1, 0, 2))
+                pt1=np.float32([tl,tr,bl,br])
+                pt2=np.float32([[0,0],[width,0],[0,height],[width,height]])
+                matrix = cv2.getPerspectiveTransform(pt1,pt2)
+                output = cv2.warpPerspective(transposed_array,matrix,(width, height))
+                output = cv2.resize(output, (128, 128))
+                output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
+                # cv2.imshow('not gonna work',output)
+                # cv2.waitKey(1)
+                outputs.append(output)
+
+        return outputs
+
 
 
     #save camera images
@@ -357,8 +377,6 @@ class Environment():
         else:
             data_type = None # stop saving
 
-        t_l,t_r,b_l,b_r = frame_corners # unpacking corners for all frames
-
         main_path = "C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/"
 
         if data_type != None:
@@ -375,23 +393,11 @@ class Environment():
             if index%100 == 0:
                 print("current image ("+data_type+"): ", index)
 
+            outputs = self.get_frame(frame_sizes ,frame_corners)
+            
             for idx in range(len(frame_sizes)): #iterating for each box
-                width, height = frame_sizes[idx], frame_sizes[idx] 
-                tl,tr,bl,br = t_l[idx],t_r[idx],b_l[idx],b_r[idx]
-
-                screen_array = pygame.surfarray.array3d(self.screen)
-                transposed_array = np.transpose(screen_array, (1, 0, 2))
-                pt1=np.float32([tl,tr,bl,br])
-                pt2=np.float32([[0,0],[width,0],[0,height],[width,height]])
-                matrix = cv2.getPerspectiveTransform(pt1,pt2)
-                output = cv2.warpPerspective(transposed_array,matrix,(width, height))
-                # print(idx)
-                
                 save_image_name = branched_path + "/camera_" + str(idx)  + "/image_" + str(index) + ".jpg"
-                output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
-                # print(save_image_name)
-                # cv2.imshow('image',output)
-                # cv2.waitKey(50000)
+                output = outputs[idx]
                 if not cv2.imwrite(save_image_name, output):
                     raise Exception("Could not write image")
             

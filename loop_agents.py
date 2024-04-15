@@ -42,7 +42,7 @@ class LoopSimulation:
     def run_simulation(self,old_agents_start=None,old_agents_goal=None):#(takes in only global goal not local goal)
         self.old_agents_start=old_agents_start
         self.old_agents_goal=old_agents_goal
-        start_points,goal_points=self.create_agents(1, 50)
+        start_points,goal_points=self.create_agents(1, 30)
         new_agents = {"start": start_points, "goal" :goal_points}
         return new_agents
     
@@ -72,6 +72,7 @@ class LoopSimulation:
     def check_spawning_overlap(self,start_points,goal_points):
         #This core function checks if the new points overlap with any points of start and goal
         if  self.old_agents_start is not None   and self.old_agents_goal is not None:
+            # print(start_points.dtype)
             start_start_diff = start_points[:,:2][:,np.newaxis] - self.old_agents_start[:,:2][np.newaxis,:,:]
             start_start_dist = np.linalg.norm(start_start_diff, axis = 2)[:,:,np.newaxis] + (1e-6)
             start_goal_diff = start_points[:,:2][:,np.newaxis] - self.old_agents_goal[np.newaxis,:,:]
@@ -191,6 +192,7 @@ class LoopSimulation:
             polygon_vec = np.random.choice(shape_choice, size=(start_points.shape[0],1))
 
             start_points = np.hstack([start_points,color_vec, radius_vec, polygon_vec])
+            # print(type(start_points),type(color_vec), type(radius_vec), type(polygon_vec))
         
             start_points,goal_points,sample_n=self.check_spawning_overlap(start_points,goal_points)
             
