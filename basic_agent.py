@@ -21,7 +21,7 @@ class CarSimulation(Environment):
         self.enable_ssta_agents=True  
         self.display_mertic=True
 
-
+   
         # Set up car and goal positions
         self.car_pos = None
         self.goal_pos = None
