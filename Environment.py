@@ -193,10 +193,11 @@ class Environment():
             pygame.draw.circle(self.screen, self.colors[color_obs], obs, 20)
         for x,y,w,h in self.obstacles['rectangle']:
             pygame.draw.rect(self.screen, self.colors[color_obs], pygame.Rect(x - w/2, y - h/2,w,h))  
-        if self.debugging:
-            for point_set in self.intersections:
-                for x, y in point_set:
-                    pygame.draw.circle(self.screen, self.colors['black'], (x, y), 3)
+        #the intersection closest point
+        # if self.debugging:
+        #     for point_set in self.intersections:
+        #         for x, y in point_set:
+        #             pygame.draw.circle(self.screen, self.colors['black'], (x, y), 3)
 
     def plot_segment_frame(self,center,box_points, frame_color = 'black'):
         # print("inside")
@@ -207,7 +208,7 @@ class Environment():
             for i, row in enumerate(center.T):
                 pygame.draw.polygon(self.screen, self.colors[frame_color], box_points[i,:],3)
             
-                pygame.draw.circle(self.screen, self.colors['red'], row, 3)
+                # pygame.draw.circle(self.screen, self.colors['red'], row, 3)
 
     def test_intersection_local_goal(self,intersections):
         # print(intersections.shape)
@@ -218,7 +219,7 @@ class Environment():
                 else:
                     for point_set in intersection:
                         x, y =point_set[0],point_set[1]
-                        pygame.draw.circle(self.screen, self.colors["blue"], (x, y), 5)
+                        pygame.draw.circle(self.screen, self.colors["blue"], (x, y), 5)      
 
     def draw_agents_with_goals(self,collision_flags):
        

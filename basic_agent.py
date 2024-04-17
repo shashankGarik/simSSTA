@@ -16,7 +16,7 @@ class CarSimulation(Environment):
         pygame.init()
         pygame.display.set_caption("Car Simulation")#Windows heading
 
-        self.debugging = False
+        self.debugging = True
         self.save_data = False
         self.enable_ssta_agents=True  
         self.display_mertic=True
@@ -28,7 +28,7 @@ class CarSimulation(Environment):
         self.obstacles = obstacle_vec
         self.clock = pygame.time.Clock()
         self.frame_rate= 60
-        self.infinity = LoopSimulation(800,800,120,1,1,42)
+        self.infinity = LoopSimulation(800,800,120,42)
 
         self.apf_ssta_agents=APFSSTAAgents(obstacle_vec,DoubleIntegratorAPF,DoubleIntegratorSSTA,self.frame_rate,self.infinity)
         self.apf_ssta_agents.enable_ssta_agents=self.enable_ssta_agents
@@ -41,7 +41,7 @@ class CarSimulation(Environment):
 
         self.timer=0
         # setting the number of views/segment(default 2 view)
-        self.twin_boxes = np.array([[30,450,50,300],[-30,50,400,300]])
+        self.twin_boxes = np.array([[30,450,50,250],[-30,50,400,250]])#angle,x,y,size
         # each side of box/view/segment 
         self.side_length = self.twin_boxes[:,-1]
         self.path_planner=Planners(self.path_size,self.replanning_index)
@@ -97,7 +97,6 @@ class CarSimulation(Environment):
                 #ssta agents local and global points
                 local_cur_points, global_cur_points,global_goal_points,camera_points_indices=self.camera_agents(local_cur_points_ssta,self.side_length, self.ssta_car_pos,self.ssta_goal_pos)
                 
-                # print("SSSSSSSSSSSSSSSSSSSSSSSSSSSS",self.ssta_goal_pos)
 
                 ###########Check
                 

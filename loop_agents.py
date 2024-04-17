@@ -6,7 +6,7 @@ from basic_agent import *
 from itertools import permutations
 
 class LoopSimulation:
-    def __init__(self, frame_h, frame_w, dist2GE_min, obs, controller, seed = None):
+    def __init__(self, frame_h, frame_w, dist2GE_min,seed = None):
         """
         Initializes simulation that ends after some time period
 
@@ -21,18 +21,10 @@ class LoopSimulation:
 
         self.frame_h = frame_h
         self.frame_w = frame_w
-        self.dist2GE_min = dist2GE_min
+        self.dist2GE_min = 500
+        self.spawing_radius=20
+        self.total_random_agents=100
         
-        # Initialize Pygame necessary for initialising the simulation window and graphics
-        print('Initializing')
-        pygame.init()
-
-        # Set up car and goal positions
-        self.obstacles = obs
-        self.controller = controller
-        self.clock = pygame.time.Clock()
-        self.frame_rate = 60
-
         self.agents = {"start" : [], "goal" : []}
         if not seed == None:
             np.random.seed(seed)
@@ -42,7 +34,7 @@ class LoopSimulation:
     def run_simulation(self,old_agents_start=None,old_agents_goal=None):#(takes in only global goal not local goal)
         self.old_agents_start=old_agents_start
         self.old_agents_goal=old_agents_goal
-        start_points,goal_points=self.create_agents(1, 50)
+        start_points,goal_points=self.create_agents(1, self.total_random_agents)
         new_agents = {"start": start_points, "goal" :goal_points}
         return new_agents
     
@@ -151,28 +143,28 @@ class LoopSimulation:
                 condition_goal = np.where(goal_random_var == case)[0]
 
                 if case=="L":
-                    x_start = np.random.sample(len(condition_start))*(self.dist2GE_min - 20) - self.dist2GE_min
+                    x_start = np.random.sample(len(condition_start))*(self.dist2GE_min - self.spawing_radius) - self.dist2GE_min
                     y_start=np.random.sample(len(condition_start))*(self.frame_h+(self.dist2GE_min))- self.dist2GE_min
-                    x_goal = np.random.sample(len(condition_goal))*(self.dist2GE_min - 20) - self.dist2GE_min
+                    x_goal = np.random.sample(len(condition_goal))*(self.dist2GE_min - self.spawing_radius) - self.dist2GE_min
                     y_goal=np.random.sample(len(condition_goal))*(self.frame_h+(self.dist2GE_min))- self.dist2GE_min
                 
                 elif case=="U":
-                    y_start = np.random.sample(len(condition_start))*(self.dist2GE_min - 20) - self.dist2GE_min
+                    y_start = np.random.sample(len(condition_start))*(self.dist2GE_min - self.spawing_radius) - self.dist2GE_min
                     x_start=np.random.sample(len(condition_start))*(self.frame_h+(self.dist2GE_min))- self.dist2GE_min
-                    y_goal = np.random.sample(len(condition_goal))*(self.dist2GE_min - 20) - self.dist2GE_min
+                    y_goal = np.random.sample(len(condition_goal))*(self.dist2GE_min - self.spawing_radius) - self.dist2GE_min
                     x_goal=np.random.sample(len(condition_goal))*(self.frame_h+(self.dist2GE_min))- self.dist2GE_min
                 
                 elif case=="R":
-                    x_start = np.random.sample(len(condition_start))*(self.dist2GE_min )+(self.frame_w+20 ) 
+                    x_start = np.random.sample(len(condition_start))*(self.dist2GE_min )+(self.frame_w+self.spawing_radius ) 
                     y_start= np.random.sample(len(condition_start))*(self.frame_h+(self.dist2GE_min))- self.dist2GE_min
-                    x_goal = np.random.sample(len(condition_goal))*(self.dist2GE_min )+(self.frame_w+20 ) 
+                    x_goal = np.random.sample(len(condition_goal))*(self.dist2GE_min )+(self.frame_w+self.spawing_radius ) 
                     y_goal= np.random.sample(len(condition_goal))*(self.frame_h+(self.dist2GE_min))- self.dist2GE_min
 
                 else:
                 # case=="D":
-                    y_start = np.random.sample(len(condition_start))*(self.dist2GE_min )+(self.frame_h+20 ) 
+                    y_start = np.random.sample(len(condition_start))*(self.dist2GE_min )+(self.frame_h+self.spawing_radius ) 
                     x_start = np.random.sample(len(condition_start))*(self.frame_w+(self.dist2GE_min))- self.dist2GE_min
-                    y_goal = np.random.sample(len(condition_goal))*(self.dist2GE_min )+(self.frame_h+20 ) 
+                    y_goal = np.random.sample(len(condition_goal))*(self.dist2GE_min )+(self.frame_h+self.spawing_radius ) 
                     x_goal = np.random.sample(len(condition_goal))*(self.frame_w+(self.dist2GE_min))- self.dist2GE_min
                     
                 start_points[condition_start,0]=x_start
@@ -191,10 +183,12 @@ class LoopSimulation:
             polygon_vec = np.random.choice(shape_choice, size=(start_points.shape[0],1))
 
             start_points = np.hstack([start_points,color_vec, radius_vec, polygon_vec])
+
+            print("ahm",start_points.shape,goal_points.shape,"sample",sample_n,"n",n)
         
             start_points,goal_points,sample_n=self.check_spawning_overlap(start_points,goal_points)
             
-            # print("ahm",start_points.shape,goal_points.shape,"sample",sample_n,"n",n)
+            print("ahm",start_points.shape,goal_points.shape,"sample",sample_n,"n",n)
             if sample_n>n:
                 start_points=start_points[:n]
                 goal_points=goal_points[:n]

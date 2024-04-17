@@ -29,7 +29,7 @@ class APFSSTAAgents():
         self.apf_control.frame_h,self.apf_control.frame_w =800,800  
         self.ssta_control.frame_h ,self.ssta_control.frame_w = 800,800
 
-        self.random_agent_generate_time=100 #change to generate varied agents at shorter or longer time
+        self.random_agent_generate_time=250 #change to generate varied agents at shorter or longer time
         self.ssta_agent_percentage=10 #percentage of total generated agents as ssta from all agents
         self.generate_flag=True
 
