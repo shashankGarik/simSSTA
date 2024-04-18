@@ -7,16 +7,15 @@ from controllers_APF import *
 from test_cases import *
 
 
+
 class Environment():
     def __init__(self, height, width, obs_vec):
         # Initialize Pygame necessary for initialising the simulation window and graphics
         print('Initializing Environment')
         pygame.init()
-        self.debugging = False
-        self.save_data = False
 
         # Define screen dimensions
-        self.width, self.height = width,height
+        self.height,self.width = height,width
         self.screen = pygame.display.set_mode((self.width, self.height))
         
         #df for csv files
@@ -38,9 +37,7 @@ class Environment():
             'lblue': (0,191,255),
             'glaucous':(96, 130, 182),
             'indigo': (63, 0, 255),
-            'blueGray':(115, 147, 179),
-
-        }
+            'blueGray':(115, 147, 179),}
 
         self.agent_colors = ['glaucous','teal','indigo','blue','blueGray','lblue','lgreen']
 
@@ -48,6 +45,11 @@ class Environment():
         self.cur_pos = None
         self.goal_pos = None
         self.obstacles = obs_vec
+        
+        # temporary functionality - realistic objects:
+        self.obstacle_img = pygame.transform.scale(pygame.image.load(r'C:\Users\Welcome\Documents\Kouby\M.S.Robo- Georgia Tech\GATECH LABS\SHREYAS_LAB\Simulation_Environment\Github Simulation Network\sim_vis_images\noentry.jpg'),(65, 65))
+        self.car_img = pygame.transform.scale(pygame.image.load(r'C:\Users\Welcome\Documents\Kouby\M.S.Robo- Georgia Tech\GATECH LABS\SHREYAS_LAB\Simulation_Environment\Github Simulation Network\sim_vis_images\carssta.jpg'),(60, 60))
+        self.pedestrian_img = pygame.transform.scale(pygame.image.load(r'C:\Users\Welcome\Documents\Kouby\M.S.Robo- Georgia Tech\GATECH LABS\SHREYAS_LAB\Simulation_Environment\Github Simulation Network\sim_vis_images\pedestrian.PNG'),(30, 30))
     
     def update_poses(self, cur_pos, goal_pos):
         self.cur_pos = cur_pos
@@ -187,12 +189,20 @@ class Environment():
     ################ Metrics ########################
     
     #plotting on the screen
+    
     def draw_map(self, color_BG = 'white', color_obs = 'red'):
         self.screen.fill(self.colors[color_BG])
         for obs in self.obstacles['circle']:
             pygame.draw.circle(self.screen, self.colors[color_obs], obs, 20)
+            # img_rect = self.obstacle_img.get_rect(center=obs)
+            # self.screen.blit(self.obstacle_img, img_rect)
         for x,y,w,h in self.obstacles['rectangle']:
-            pygame.draw.rect(self.screen, self.colors[color_obs], pygame.Rect(x - w/2, y - h/2,w,h))  
+            if self.display_realistic:
+                img_rect = self.obstacle_img.get_rect(center=(x, y))
+                self.screen.blit(self.obstacle_img, img_rect)  
+            else:
+                pygame.draw.rect(self.screen, self.colors[color_obs], pygame.Rect(x - w/2, y - h/2,w,h))
+
         #the intersection closest point
         # if self.debugging:
         #     for point_set in self.intersections:
@@ -221,6 +231,7 @@ class Environment():
                         x, y =point_set[0],point_set[1]
                         pygame.draw.circle(self.screen, self.colors["blue"], (x, y), 5)      
 
+    
     def draw_agents_with_goals(self,collision_flags):
        
         for start, goal, collided in zip(self.cur_pos, self.goal_pos, collision_flags):
@@ -232,7 +243,12 @@ class Environment():
             if self.debugging:
                 pygame.draw.circle(self.screen, self.colors['black'], goal, 2)
             if start[6] == -1:
-                pygame.draw.circle(self.screen, agent_color, start[:2], start[5])
+                if self.display_realistic:
+                    img_rect = self.pedestrian_img.get_rect(center=start[:2])
+                    self.screen.blit(self.pedestrian_img, img_rect)
+                else:
+                    pygame.draw.circle(self.screen, agent_color, start[:2], start[5])
+                
             else:
                 vertices = self.calculate_equilateral_polygon_vertices(start[:2],int(start[5]), int(start[6]))
                 pygame.draw.polygon(self.screen, agent_color, vertices)
@@ -336,7 +352,28 @@ class Environment():
 
         
 # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -X- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-        
+
+    def get_frame(self, frame_sizes ,frame_corners):
+        t_l,t_r,b_l,b_r = frame_corners # unpacking corners for all frames
+        outputs = []
+        for idx in range(len(frame_sizes)): #iterating for each box
+                width, height = frame_sizes[idx], frame_sizes[idx] 
+                tl,tr,bl,br = t_l[idx],t_r[idx],b_l[idx],b_r[idx]
+
+                screen_array = pygame.surfarray.array3d(self.screen)
+                transposed_array = np.transpose(screen_array, (1, 0, 2))
+                pt1=np.float32([tl,tr,bl,br])
+                pt2=np.float32([[0,0],[width,0],[0,height],[width,height]])
+                matrix = cv2.getPerspectiveTransform(pt1,pt2)
+                output = cv2.warpPerspective(transposed_array,matrix,(width, height))
+                output = cv2.resize(output, (128, 128))
+                output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
+                # cv2.imshow('not gonna work',output)
+                # cv2.waitKey(1)
+                outputs.append(output)
+
+        return outputs
+
 
 
     #save camera images
@@ -358,8 +395,6 @@ class Environment():
         else:
             data_type = None # stop saving
 
-        t_l,t_r,b_l,b_r = frame_corners # unpacking corners for all frames
-
         main_path = "C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/"
 
         if data_type != None:
@@ -376,23 +411,11 @@ class Environment():
             if index%100 == 0:
                 print("current image ("+data_type+"): ", index)
 
+            outputs = self.get_frame(frame_sizes ,frame_corners)
+            
             for idx in range(len(frame_sizes)): #iterating for each box
-                width, height = frame_sizes[idx], frame_sizes[idx] 
-                tl,tr,bl,br = t_l[idx],t_r[idx],b_l[idx],b_r[idx]
-
-                screen_array = pygame.surfarray.array3d(self.screen)
-                transposed_array = np.transpose(screen_array, (1, 0, 2))
-                pt1=np.float32([tl,tr,bl,br])
-                pt2=np.float32([[0,0],[width,0],[0,height],[width,height]])
-                matrix = cv2.getPerspectiveTransform(pt1,pt2)
-                output = cv2.warpPerspective(transposed_array,matrix,(width, height))
-                # print(idx)
-                
                 save_image_name = branched_path + "/camera_" + str(idx)  + "/image_" + str(index) + ".jpg"
-                output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
-                # print(save_image_name)
-                # cv2.imshow('image',output)
-                # cv2.waitKey(50000)
+                output = outputs[idx]
                 if not cv2.imwrite(save_image_name, output):
                     raise Exception("Could not write image")
             
@@ -420,6 +443,3 @@ class Environment():
     
        
        
-
-
-

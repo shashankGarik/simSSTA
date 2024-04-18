@@ -7,44 +7,57 @@ from loop_agents import *
 from Environment import Environment
 from APF_SSTA_agents import *
 from Planners.path_planners import *
+from predict import *
+from config import args
+import sys
+
+
 
 class CarSimulation(Environment):
     def __init__(self, obstacle_vec):
-        super().__init__(800, 800, obstacle_vec)
+        super().__init__(args.window_height, args.window_width, obstacle_vec)
+
         # Initialize Pygame necessary for initialising the simulation window and graphics
         print('Initializing Agents')
         pygame.init()
         pygame.display.set_caption("Car Simulation")#Windows heading
 
-        self.debugging = True
-        self.save_data = False
-        self.enable_ssta_agents=True  
-        self.display_mertic=True
+        self.debugging = args.debugging
+        self.save_data = args.save_data
+        self.enable_ssta_agents=args.enable_ssta_agents  
+        self.display_mertic=args.display_metric
+        self.do_inference = args.do_inference
+        self.display_realistic=args.display_realistic
+        
+        #running the model and visualising the T2NO results
+        if self.do_inference:
+            self.predictor = SSTA_predictor(args)
 
-   
         # Set up car and goal positions
-        self.car_pos = None
-        self.goal_pos = None
         self.obstacles = obstacle_vec
         self.clock = pygame.time.Clock()
-        self.frame_rate= 60
-        self.infinity = LoopSimulation(800,800,120,42)
+        self.frame_rate= args.frame_rate
+        self.infinity = LoopSimulation(args.window_height,args.window_width,100,args.seed)
 
         self.apf_ssta_agents=APFSSTAAgents(obstacle_vec,DoubleIntegratorAPF,DoubleIntegratorSSTA,self.frame_rate,self.infinity)
         self.apf_ssta_agents.enable_ssta_agents=self.enable_ssta_agents
 
+        ###to be completed
         self.path_size=21
         self.replanning_index=5
+        self.path_planner=Planners(self.path_size,self.replanning_index)
+        ###
         self.apf_ssta_agents.ssta_control.path_size=self.path_size
         self.apf_ssta_agents.ssta_control.replanning_index=self.replanning_index
 
 
         self.timer=0
         # setting the number of views/segment(default 2 view)
-        self.twin_boxes = np.array([[30,450,50,250],[-30,50,400,250]])#angle,x,y,size
+        self.ssta_boxes = args.ssta_boxes
         # each side of box/view/segment 
-        self.side_length = self.twin_boxes[:,-1]
-        self.path_planner=Planners(self.path_size,self.replanning_index)
+        self.side_length = self.ssta_boxes[:,-1]
+
+     
      
     def run_simulation(self):
         print('running')
@@ -57,14 +70,10 @@ class CarSimulation(Environment):
                     running = False
 
             # Update/Obtain APF and SSTA car position
-
             self.apf_ssta_agents.generate_agents(self.timer)
             self.apf_car_pos,self.apf_goal_pos =  self.apf_ssta_agents.generate_apf_agents()
-
             if self.enable_ssta_agents:
                 self.ssta_car_pos,self.ssta_goal_pos = self.apf_ssta_agents.generate_ssta_agents()
-
-            
 
             #concatenating apf and ssta agents
             if self.enable_ssta_agents:
@@ -74,12 +83,13 @@ class CarSimulation(Environment):
                 self.car_pos=self.apf_car_pos
                 self.goal_pos=self.apf_goal_pos
 
- 
+            #setting the agent poses in the environment for displaying
             self.update_poses(self.car_pos, self.goal_pos)
+
             # setting the number of views/segment
-            self.frame_angle,centers,(t_l,t_r,b_l,b_r)=self.segment_frame(self.twin_boxes)
+            self.frame_angle,centers,(t_l,t_r,b_l,b_r)=self.segment_frame(self.ssta_boxes)
     
-            #intersection for visulaisation
+            #intersection for visualisation
             if self.enable_ssta_agents:
                 self.intersections_apf=self.apf_ssta_agents.apf_control.intersection()
                 self.intersections_ssta=self.apf_ssta_agents.ssta_control.intersection()
@@ -118,9 +128,7 @@ class CarSimulation(Environment):
                 self.intersections=self.apf_ssta_agents.apf_control.intersection()
                 self.colllison_apf_ssta=self.apf_ssta_agents.apf_control.agent_collision
             
-            # quit()
-            self.draw_map() # draws map with obstacles
-            
+            self.draw_map() # draws map with obstacles 
             self.draw_agents_with_goals(self.colllison_apf_ssta) # draws agents and their respective goal positions
             # plotting the segment
             self.plot_segment_frame(centers,(t_l,t_r,b_l,b_r))
@@ -152,6 +160,7 @@ class CarSimulation(Environment):
             #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
             ########## Saving the images on views and csv file
+            ##need to complete the t2no image saving
             if self.save_data:
                 #getting the agents in the frame
                 # print(camera_x_local,len(camera_x_local))
@@ -161,6 +170,12 @@ class CarSimulation(Environment):
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
 
             ############################################
+
+            ##################### get predictions and visualise#######################
+            if self.do_inference:
+                inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
+                predictions = self.predictor.get_predictions(np.array(inputs))
+            ############################################
             
             pygame.display.update()
             self.clock.tick(self.frame_rate)
@@ -168,15 +183,5 @@ class CarSimulation(Environment):
         pygame.quit()
 
 if __name__ == "__main__":
-    obstacles = {'circle': np.array([]),
-        'rectangle': np.array([[500,500,30,30],
-                                [700,700,30,30],
-                                [300,300,30,30],
-                                [700,300,30,30],
-                                [300,700,30,30],
-                                [300,500,30,30],
-                                [500,300,30,30],
-                                [700,500,30,30],
-                                [500,700,30,30]])}
-    simulation = CarSimulation(obstacles)
+    simulation = CarSimulation(args.obstacles)
     simulation.run_simulation()

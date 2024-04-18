@@ -1,4 +1,5 @@
 import numpy as np
+from config import args
 
 
 class APFSSTAAgents():
@@ -26,12 +27,12 @@ class APFSSTAAgents():
         self.ssta_control = controller_ssta(self.ssta_car_pos, self.ssta_goal_pos, self.obstacles)#ssta controller
         self.apf_control.dt = 1/frame_rate
         self.ssta_control.dt = 1/frame_rate
-        self.apf_control.frame_h,self.apf_control.frame_w =800,800  
-        self.ssta_control.frame_h ,self.ssta_control.frame_w = 800,800
+        self.apf_control.frame_h,self.apf_control.frame_w =args.window_height,args.window_width
+        self.ssta_control.frame_h ,self.ssta_control.frame_w = args.window_height,args.window_width
 
-        self.random_agent_generate_time=250 #change to generate varied agents at shorter or longer time
-        self.ssta_agent_percentage=10 #percentage of total generated agents as ssta from all agents
-        self.generate_flag=True
+        self.random_agent_generate_time=args.agents_spawning_frequency #change to generate varied agents at shorter or longer time
+        self.ssta_agent_percentage=args.ssta_spawning_percentage #percentage of total generated agents as ssta from all agents
+        self.generate_flag=args.generate_new_agents
 
 
     def generate_agents(self,timer):

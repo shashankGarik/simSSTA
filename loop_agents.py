@@ -21,7 +21,7 @@ class LoopSimulation:
 
         self.frame_h = frame_h
         self.frame_w = frame_w
-        self.dist2GE_min = 500
+        self.dist2GE_min = dist2GE_min
         self.spawing_radius=20
         self.total_random_agents=100
         

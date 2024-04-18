@@ -12,10 +12,9 @@ class DoubleIntegratorSSTA:
         self.goal_pos = goal_pos
         self.obs_circle = obstacles['circle']
         self.obs_rectangle = obstacles['rectangle']
-        self.dt = 0.05
+        self.dt = 0.0
         self.total_time=0.0
         self.total_collision=0.0
-        # self.agent_collision=np.array([False]*self.x.shape[0])
         self.combined_camera_indices=[(np.array([], dtype=np.int64),)]
         self.agent_collision=np.array([False]*self.x.shape[0])
         self.global_agent_paths=None
