@@ -37,7 +37,7 @@ class CarSimulation(Environment):
         self.obstacles = obstacle_vec
         self.clock = pygame.time.Clock()
         self.frame_rate= 60
-        self.infinity = LoopSimulation(800,800,120,1,1,100)
+        self.infinity = LoopSimulation(800,800,120,1,1,42)
         self.apf_agents=APFAgents(obstacle_vec,DoubleIntegratorAPF,self.frame_rate,self.infinity)
         self.ssta_agents=SSTAAgents(obstacle_vec,DoubleIntegratorSSTA,self.frame_rate,self.infinity)
         self.path_size=21

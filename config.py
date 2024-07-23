@@ -16,4 +16,10 @@ parser.add_argument('--num_views', type=int, default=2)
 parser.add_argument('--device', type=str, default='cuda:0')
 parser.add_argument('--message_type', type=str, default='raw_data', help='normal, zeros, randn, raw_data, vae')
 
+######################## inference/training/visualization params ########################
+parser.add_argument('--threshold_time_step_gt', type=int, default=50,help="timestep of t2no/t2nd")
+parser.add_argument('--threshold_time_step_pd', type=int, default=50,help="timestep of t2no/t2nd")
+parser.add_argument('--vis', type = bool, default = True, help='visualize results or not')
+parser.add_argument('--t2n_cmap', type = str, default = 'viridis', help ="viridis/gray")
+
 args = parser.parse_args()
