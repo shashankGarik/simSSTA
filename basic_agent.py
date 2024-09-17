@@ -15,7 +15,7 @@ class CarSimulation(Environment):
         pygame.display.set_caption("Car Simulation")#Windows heading
 
         self.debugging = False
-        self.save_data = True
+        self.save_data = False
 
         # Set up car and goal positions
         self.car_pos = start_vec
