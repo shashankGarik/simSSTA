@@ -24,7 +24,7 @@ class CarSimulation(Environment):
         self.obstacles = obstacle_vec
         self.controller = controller
         self.clock = pygame.time.Clock()
-        self.frame_rate= 60
+        self.frame_rate= 30
 
         self.control = self.controller(self.car_pos, self.goal_pos, self.obstacles)
         self.control.dt = 1/self.frame_rate
@@ -47,7 +47,7 @@ class CarSimulation(Environment):
                     running = False
 
            # Update car position
-            if self.timer%100==0:
+            if self.timer%500==0:
                 new_agents=self.infinity.run_simulation(self.car_pos,(self.goal_pos[:,:2]).astype(np.int32))# important that goal points passed in must be global and of int 32
                 self.control.create_agents(new_agents)
                 self.car_pos = self.control.x
