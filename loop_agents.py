@@ -184,11 +184,11 @@ class LoopSimulation:
 
             start_points = np.hstack([start_points,color_vec, radius_vec, polygon_vec])
 
-            print("ahm",start_points.shape,goal_points.shape,"sample",sample_n,"n",n)
+            # print("ahm",start_points.shape,goal_points.shape,"sample",sample_n,"n",n)
         
             start_points,goal_points,sample_n=self.check_spawning_overlap(start_points,goal_points)
             
-            print("ahm",start_points.shape,goal_points.shape,"sample",sample_n,"n",n)
+            # print("ahm",start_points.shape,goal_points.shape,"sample",sample_n,"n",n)
             if sample_n>n:
                 start_points=start_points[:n]
                 goal_points=goal_points[:n]

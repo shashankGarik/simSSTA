@@ -71,11 +71,11 @@ class APFSSTAAgents():
         self.apf_car_pos,self.apf_goal_pos = self.apf_control.car_pos()
         if  self.enable_ssta_agents:self.ssta_car_pos,self.ssta_goal_pos=self.ssta_control.car_pos()  
 
-        if timer%100==0:
-            if  self.enable_ssta_agents:
-                print("Total APF agents:",self.apf_car_pos.shape[0])
-                print("Total SSTA_apf agents:",self.ssta_control.apf_agents.shape[0])
-                print("Total SSTA_SSTA agents:",self.ssta_control.ssta_agents.shape[0])
+        # if timer%100==0:
+        #     if  self.enable_ssta_agents:
+        #         print("Total APF agents:",self.apf_car_pos.shape[0])
+        #         print("Total SSTA_apf agents:",self.ssta_control.apf_agents.shape[0])
+        #         print("Total SSTA_SSTA agents:",self.ssta_control.ssta_agents.shape[0])
                       
 
 

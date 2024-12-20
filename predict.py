@@ -71,6 +71,7 @@ class SSTA_predictor:
         self.loss = nn.MSELoss()
 
     def get_predictions(self, inputs):
+        vis = None
         # print(inputs.shape)
         image = np.uint8(np.dot(inputs[...,:3], [0.200, 0.587, 0.114])) ## convert to grayscale
         
@@ -83,8 +84,6 @@ class SSTA_predictor:
         # print(inputs.shape)
         outputs = []
         
-
-
         with torch.no_grad():
         
             for view, model_name in enumerate(self.models.keys()):
@@ -106,7 +105,6 @@ class SSTA_predictor:
                 elif args.message_type == 'randn':
                     self.messages[model_name] = torch.randn_like(self.messages[model_name])
 
-
         if self.is_train:
             gt_t2ns =  np.concatenate([t2no[view][np.newaxis,:,:], t2nd[view][np.newaxis,:,:]], axis = 0)
             gt_t2ns= torch.tensor(gt_t2ns, dtype=torch.float32).permute((1,2,0)).to(self.args.device)
@@ -120,9 +118,9 @@ class SSTA_predictor:
 
 
         if self.vis:
-            self.visualize(outputs, inputs, t2no, t2nd)
+            vis = self.visualize(outputs, inputs, t2no, t2nd)
 
-        return t2no, t2nd
+        return t2no, t2nd, vis
 
     def train(self, pred, gt):
         
@@ -283,6 +281,8 @@ class SSTA_predictor:
         border_v2 = np.zeros((final.shape[0],1,3))
 
         final_final = np.hstack([border_v2, final, border_v2])
+
+        return final_final
 
         cv2.imshow('"funs",not gonna work',final_final)
         cv2.waitKey(1)

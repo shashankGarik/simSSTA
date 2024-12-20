@@ -10,7 +10,7 @@ from Planners.path_planners import *
 from predict import *
 from config import args
 import sys
-
+import cv2
 
 
 class CarSimulation(Environment):
@@ -24,6 +24,8 @@ class CarSimulation(Environment):
 
         self.debugging = args.debugging
         self.save_data = args.save_data
+        self.save_video = args.save_video
+        self.save_inference_video = args.save_inference
         self.enable_ssta_agents=args.enable_ssta_agents  
         self.display_mertic=args.display_metric
         self.do_inference = args.do_inference
@@ -32,6 +34,12 @@ class CarSimulation(Environment):
         #running the model and visualising the T2NO results
         if self.do_inference:
             self.predictor = SSTA_predictor(args)
+            if self.save_inference_video:
+                self.inference_saver = cv2.VideoWriter('inference.avi',  cv2.VideoWriter_fourcc(*'MJPG'), 60, (520, 390)) 
+                self.inference_duration = tuple(args.inference_duration)
+        if self.save_video:
+            self.video_saver = cv2.VideoWriter('full_sim.avi',  cv2.VideoWriter_fourcc(*'MJPG'), 60, (args.window_width, args.window_height)) 
+            self.duration = tuple(args.video_duration)
 
         # Set up car and goal positions
         self.obstacles = obstacle_vec
@@ -168,13 +176,36 @@ class CarSimulation(Environment):
                 self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 6000, 0, 0, 0)#side_length,square dimensions,timer,train,test,val,gap(buffer)
                 # saving camera csv file (TO DOOOOOOO)
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
+            if self.save_video and self.duration[0] < self.timer and self.duration[1] >= self.timer:
+                frame = pygame.surfarray.array3d(self.screen)
+                frame = np.transpose(frame, (1, 0, 2))
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                # frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+                self.video_saver.write(frame)
+
+                if self.timer == self.duration[1]:
+                    self.video_saver.release()
+                    cv2.destroyAllWindows() 
+                    print("Saved Video")
 
             ############################################
 
             ##################### get predictions and visualise#######################
             if self.do_inference:
                 inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
-                predictions = self.predictor.get_predictions(np.array(inputs))
+                t2no, t2nd, vis = self.predictor.get_predictions(np.array(inputs))
+
+                if self.save_inference_video and self.inference_duration[0] < self.timer and self.inference_duration[1] >= self.timer:
+                    print(f"Saving {self.timer}")
+                    self.inference_saver.write(np.uint8(vis*255))
+
+                    if self.timer == self.inference_duration[1]:
+                        cv2.imwrite("something.png", vis)
+                        self.inference_saver.release()
+                        cv2.destroyAllWindows() 
+                        print("Saved Inference")
+                        quit()
+
             ############################################
             
             pygame.display.update()

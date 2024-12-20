@@ -12,8 +12,8 @@ parser.add_argument('--num_hidden', type=str, default='32,32,32,64', help='64,64
 parser.add_argument('--stride', type=int, default=1)
 
 ######################## SSTA inference params ########################
-parser.add_argument('--ssta_ckpt_dir', type=str, default=r'C:\Users\Welcome\Documents\Kouby\M.S.Robo- Georgia Tech\GATECH LABS\SHREYAS_LAB\Simulation_Environment\Github Simulation Network\ssta_vae_trained_models\ssta_file\51', help='checkpoint dir')
-parser.add_argument('--vae_ckpt_dir', type=str, default=r'C:\Users\Welcome\Documents\Kouby\M.S.Robo- Georgia Tech\GATECH LABS\SHREYAS_LAB\Simulation_Environment\Github Simulation Network\ssta_vae_trained_models\vae_file',help='None')
+parser.add_argument('--ssta_ckpt_dir', type=str, default='/home/sgarikipati7/packages/simSSTA/ssta_vae_trained_models/ssta_file/51', help='checkpoint dir')
+parser.add_argument('--vae_ckpt_dir', type=str, default='/home/sgarikipati7/packages/simSSTA/ssta_vae_trained_models/vae_file',help='None')
 parser.add_argument('--num_views', type=int, default=2)
 parser.add_argument('--device', type=str, default='cuda:0')
 parser.add_argument('--message_type', type=str, default='raw_data', help='normal, zeros, randn, raw_data, vae')
@@ -21,15 +21,20 @@ parser.add_argument('--message_type', type=str, default='raw_data', help='normal
 ######################## inference/training/visualization params ########################
 parser.add_argument('--threshold_time_step_gt', type=int, default=100,help="timestep of t2no/t2nd")
 parser.add_argument('--threshold_time_step_pd', type=int, default=50,help="timestep of t2no/t2nd")
-parser.add_argument('--vis_T2NO_D', type = bool, default = False, help='visualize results or not')
-parser.add_argument('--do_inference', type = bool, default = False, help ="Predict T2no/d images or not")
+parser.add_argument('--vis_T2NO_D', type = bool, default = True, help='visualize results or not')
+parser.add_argument('--do_inference', type = bool, default = True, help ="Predict T2no/d images or not")
 parser.add_argument('--lifelong_learning', type = bool, default = False, help ="Training ssta agents on live data or not")
 parser.add_argument('--t2n_cmap', type = str, default = 'viridis', help ="viridis/gray")
 
 ######################## Simulation environment params ########################
   ############# Flags ########################
-parser.add_argument('--debugging', type = bool, default = True, help ="Show debugging points and view frames(ssta) or not")
+parser.add_argument('--debugging', type = bool, default = False, help ="Show debugging points and view frames(ssta) or not")
 parser.add_argument('--save_data', type = bool, default = False, help ="Saves the  input frames and t2no/d images  or not")
+parser.add_argument('--save_video', type = bool, default = True, help ="Saves the video of the SSTA")
+parser.add_argument('--save_inference', type = bool, default = True, help ="Saves the video of the SSTA")
+parser.add_argument('--video_duration', type = int, nargs= '+',default = (500,2000), help = "(start_frame, end_frame)")
+parser.add_argument('--inference_duration', type = int, nargs= '+',default = (500,2000), help = "(start_frame, end_frame)")
+
 parser.add_argument('--enable_ssta_agents', type = bool, default = True, help ="Add in SSTA agents to the APF agents or not")
 parser.add_argument('--generate_new_agents', type = bool, default = True, help ="generate/spawn new agents")
 parser.add_argument('--display_metric', type = bool, default = True, help ="Displays the metrics when set to True")
