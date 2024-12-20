@@ -41,8 +41,8 @@ parser.add_argument('--seed', type = int, default =42 , help =" random seed ")
 parser.add_argument('--window_width', type = int, default =1000 , help ="Simulation Window Width")
 parser.add_argument('--window_height', type = int, default =800 , help ="Simulation Window Height")
 parser.add_argument('--frame_rate', type = int, default =60 , help =" Display Frame Rate")
-parser.add_argument('--agents_spawning_frequency', type = int, default =200 , help =" Time interval at which new agents are created")
-parser.add_argument('--ssta_spawning_percentage', type = int, default =20 , help =" Precentage of SSTA agents in the newly spawned agents")
+parser.add_argument('--agents_spawning_frequency', type = int, default = 100 , help =" Time interval at which new agents are created")
+parser.add_argument('--ssta_spawning_percentage', type = int, default = 50 , help =" Precentage of SSTA agents in the newly spawned agents")
 
  ############ static definition simulation ##########
 parser.add_argument('--ssta_boxes', type = list, default = np.array([[-60,300,400,300],[-60,450,50,300]]) , help =" ssta box dimensions #angle,x,y,size")
