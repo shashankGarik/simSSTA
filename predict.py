@@ -58,6 +58,8 @@ class SSTA_predictor:
         self.q_E = queue.Queue(args.threshold_time_step_gt)
         self.q_E_t2nd = queue.Queue(args.threshold_time_step_gt)
         self.B = np.ones((128,128))*255.0
+        self.t2n_gt_time = args.threshold_time_step_gt
+        self.t2n_pd_time = args.threshold_time_step_pd
 
         self.t2no = None
         self.t2nd = None
@@ -75,8 +77,9 @@ class SSTA_predictor:
         # print(inputs.shape)
         image = np.uint8(np.dot(inputs[...,:3], [0.200, 0.587, 0.114])) ## convert to grayscale
         
-        t2no = self.compute_t2no(image)
-        t2nd = self.compute_t2nd(image, t2no)
+        # t2no = self.compute_t2no(image)
+        # t2nd = self.compute_t2nd(image, t2no)
+        t2no, t2nd = self.compute_t2nod(image)
       
         inputs = np.float32(inputs/255.00)
 
@@ -115,7 +118,6 @@ class SSTA_predictor:
         output1 = outputs[1][:,:,:,:,:].detach().cpu().numpy().squeeze()
         inputs = inputs[:,:,:,:,:].detach().cpu().numpy().squeeze()
         outputs = [output0, output1]
-
 
         if self.vis:
             vis = self.visualize(outputs, inputs, t2no, t2nd)
@@ -172,7 +174,7 @@ class SSTA_predictor:
 
         if not self.q_E.full():
             
-            return np.array([np.ones((128,128))]*self.args.num_views)
+            return np.array([np.ones((128,128))*self.t2n_gt_time]*self.args.num_views)
 
         q_E_t2no_array = np.asarray(list(self.q_E.queue) + [np.ones_like(diff_img_T) * 255.])
 
@@ -187,7 +189,7 @@ class SSTA_predictor:
 
         if not self.q_E_t2nd.full():
             
-            return np.array([np.ones((128,128))]*self.args.num_views)
+            return np.array([np.zeros((128,128))]*self.args.num_views)
         
         q_E_t2nd_array = np.asarray(list(self.q_E_t2nd.queue))
 
@@ -198,6 +200,36 @@ class SSTA_predictor:
         self.q_E_t2nd.get()
 
         return t2nd_img
+
+    def compute_t2nod(self, frame):
+        
+        diff_img_T = (np.abs(self.B[np.newaxis,:,:]-frame).astype(np.uint8) > 70) * 255.  # [False, True]
+        self.q_E.put(diff_img_T)
+
+        data_stack = np.array(list(self.q_E.queue))
+
+        if not self.q_E.full():
+            return np.array([np.ones((128,128))*self.t2n_gt_time]*self.args.num_views), np.array([np.zeros((128,128))]*self.args.num_views)
+
+        q_E_t2no_array = np.asarray(list(self.q_E.queue) + [np.ones_like(diff_img_T) * 255.])
+
+        t2no_img = np.argmax(q_E_t2no_array, axis=0)
+
+        num_arrays = data_stack.shape[0]
+        indices = np.arange(num_arrays)[:, None, None, None]  # Shape: (5, 1, 1)
+        mask = indices > t2no_img[None, :, :]  # True for elements after argmax
+
+        masked_data = np.where(mask, data_stack, np.inf)  # [N,2,128,128]
+        # print(masked_data[:,1,100,100])
+        t2nd_img = np.argmin(masked_data, axis=0) 
+
+        # only_inf_or_128 = np.all((masked_data == 255) | np.isinf(masked_data), axis=0)
+
+        # # Step 6: Handle edge cases
+        # t2nd_img = np.where(only_inf_or_128, self.t2n_gt_time, t2nd_img)  # Use argmax index if no valid min exists
+
+        self.q_E.get()
+        return t2no_img, t2nd_img
 
 
     def visualize(self, pred, input, t2no, t2nd):

@@ -26,7 +26,7 @@ class CarSimulation(Environment):
         self.save_data = args.save_data
         self.save_video = args.save_video
         self.save_inference_video = args.save_inference
-        self.enable_ssta_agents=args.enable_ssta_agents  
+        self.enable_ssta_agents=args.enable_ssta_agents
         self.display_mertic=args.display_metric
         self.do_inference = args.do_inference
         self.display_realistic=args.display_realistic
@@ -65,8 +65,7 @@ class CarSimulation(Environment):
         # each side of box/view/segment 
         self.side_length = self.ssta_boxes[:,-1]
 
-     
-     
+
     def run_simulation(self):
         print('running')
         # Main simulation loop
@@ -96,7 +95,26 @@ class CarSimulation(Environment):
 
             # setting the number of views/segment
             self.frame_angle,centers,(t_l,t_r,b_l,b_r)=self.segment_frame(self.ssta_boxes)
-    
+
+
+            ##################### get predictions and visualise#######################
+            if self.do_inference or self.enable_ssta_agents:
+                inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
+                t2no, t2nd, vis = self.predictor.get_predictions(np.array(inputs))
+
+
+                if self.save_inference_video and self.inference_duration[0] < self.timer and self.inference_duration[1] >= self.timer:
+                    print(f"Saving {self.timer}")
+                    self.inference_saver.write(np.uint8(vis*255))
+
+                    if self.timer == self.inference_duration[1]:
+                        self.inference_saver.release()
+                        cv2.destroyAllWindows() 
+                        print("Saved Inference")
+                        quit()
+
+            ############################################
+
             #intersection for visualisation
             if self.enable_ssta_agents:
                 self.intersections_apf=self.apf_ssta_agents.apf_control.intersection()
@@ -120,14 +138,15 @@ class CarSimulation(Environment):
                 
                 self.apf_ssta_agents.ssta_goal_pos,_,self.apf_ssta_agents.ssta_control.combined_camera_indices=self.global_local_goal(self.ssta_goal_pos,camera_points_indices,local_cur_points,global_cur_points,global_goal_points,(t_l,t_r,b_l,b_r),self.frame_angle)
                 
-                # self.ssta_path_indices=self.apf_ssta_agents.ssta_control.path_indices
+                
                 
                 ##returns local path
                 #return as view,n,m,2
-                # local_path_test=self.path_planner.a_star( self.apf_ssta_agents.ssta_goal_pos,camera_points_indices, self.timer,self.ssta_path_indices)
-                
-                # self.apf_ssta_agents.ssta_control.global_agent_paths=self.transform_local_to_global_path_vectorized(local_path_test,camera_points_indices,t_l,self.frame_angle,n=len(self.ssta_goal_pos),k=self.path_size)
-                # self.apf_ssta_agents.ssta_control.global_agent_paths=np.full(local_cur_points[0].shape,None)
+                self.ssta_path_indices=self.apf_ssta_agents.ssta_control.path_indices
+                local_path_test=self.path_planner.a_star(self.apf_ssta_agents.ssta_goal_pos, self.timer, self.ssta_path_indices, t2no, t2nd)
+                self.apf_ssta_agents.ssta_control.global_agent_paths=self.transform_local_to_global_path_vectorized(local_path_test,camera_points_indices,t_l,self.frame_angle,n=len(self.ssta_goal_pos),k=self.path_size)
+                self.apf_ssta_agents.ssta_control.global_agent_paths=np.full(local_cur_points[0].shape,None)
+
                 # print("global", self.ssta_agents.control.global_agent_paths)
                 # print("camera", self.ssta_agents.control.combined_camera_indices)
 
@@ -187,24 +206,6 @@ class CarSimulation(Environment):
                     self.video_saver.release()
                     cv2.destroyAllWindows() 
                     print("Saved Video")
-
-            ############################################
-
-            ##################### get predictions and visualise#######################
-            if self.do_inference:
-                inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
-                t2no, t2nd, vis = self.predictor.get_predictions(np.array(inputs))
-
-                if self.save_inference_video and self.inference_duration[0] < self.timer and self.inference_duration[1] >= self.timer:
-                    print(f"Saving {self.timer}")
-                    self.inference_saver.write(np.uint8(vis*255))
-
-                    if self.timer == self.inference_duration[1]:
-                        cv2.imwrite("something.png", vis)
-                        self.inference_saver.release()
-                        cv2.destroyAllWindows() 
-                        print("Saved Inference")
-                        quit()
 
             ############################################
             

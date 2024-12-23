@@ -49,7 +49,7 @@ class Environment():
         # temporary functionality - realistic objects:
         self.obstacle_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/carssta.jpg'),(65, 65))
         self.car_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/noentry.jpg'),(60, 60))
-        self.pedestrian_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/pedestrian.png'),(30, 30))
+        self.pedestrian_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/pedestrian.PNG'),(30, 30))
     
     def update_poses(self, cur_pos, goal_pos):
         self.cur_pos = cur_pos

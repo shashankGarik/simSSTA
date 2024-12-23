@@ -32,8 +32,8 @@ parser.add_argument('--debugging', type = bool, default = False, help ="Show deb
 parser.add_argument('--save_data', type = bool, default = False, help ="Saves the  input frames and t2no/d images  or not")
 parser.add_argument('--save_video', type = bool, default = True, help ="Saves the video of the SSTA")
 parser.add_argument('--save_inference', type = bool, default = True, help ="Saves the video of the SSTA")
-parser.add_argument('--video_duration', type = int, nargs= '+',default = (500,2000), help = "(start_frame, end_frame)")
-parser.add_argument('--inference_duration', type = int, nargs= '+',default = (500,2000), help = "(start_frame, end_frame)")
+parser.add_argument('--video_duration', type = int, nargs= '+',default = (250,1250), help = "(start_frame, end_frame)")
+parser.add_argument('--inference_duration', type = int, nargs= '+',default = (250,1250), help = "(start_frame, end_frame)")
 
 parser.add_argument('--enable_ssta_agents', type = bool, default = True, help ="Add in SSTA agents to the APF agents or not")
 parser.add_argument('--generate_new_agents', type = bool, default = True, help ="generate/spawn new agents")

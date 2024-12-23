@@ -14,9 +14,11 @@ class Planners():
         self.path=[np.full((path_size,2),-1)]
       
 
-    def a_star(self,ssta_agents_goal_poses,ssta_camera_indices,time_step,ssta_path_indices):
-  
+    def a_star(self,ssta_agents_goal_poses,time_step,ssta_path_indices, t2no, t2nd):
+        
         ssta_agents_start_poses=ssta_agents_goal_poses[:,4:6]
+        # print(ssta_agents_goal_poses)
+        # print(ssta_agents_start_poses)
 
         # return as view,n,m,2 - this is as a list
         
@@ -24,18 +26,18 @@ class Planners():
             
             if each[-1] == None :
                 continue
-            if  ssta_path_indices[0]==self.replanning_index or self.path[0][0][0]==-1:
-                count = str(time_step+1)
-                count_filled = count.zfill(8)
-                t2no_path = os.path.join(r'C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/train/_MOG_t2no_50','camera_'+str(each[-1]),'t2no_' + count_filled + '.png')
-                t2nd_path = os.path.join(r'C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/train/_MOG_t2no_50','camera_'+str(each[-1]),'t2nd_' + count_filled + '.png')
-                t2no = cv2.imread(t2no_path, cv2.IMREAD_GRAYSCALE)
-                t2nd = cv2.imread(t2nd_path, cv2.IMREAD_GRAYSCALE)
-                check = Astar_T2nod(t2no.T, t2nd.T)
-                start = tuple(np.int16(ssta_agents_start_poses[0]*(128/300)))
+            elif  ssta_path_indices[0]==self.replanning_index or self.path[0][0][0]==-1:
+                # count = str(time_step+1)
+                # count_filled = count.zfill(8)
+                # t2no_path = os.path.join(r'C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/train/_MOG_t2no_50','camera_'+str(each[-1]),'t2no_' + count_filled + '.png')
+                # t2nd_path = os.path.join(r'C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/train/_MOG_t2no_50','camera_'+str(each[-1]),'t2nd_' + count_filled + '.png')
+                # t2no = cv2.imread(t2no_path, cv2.IMREAD_GRAYSCALE)
+                # t2nd = cv2.imread(t2nd_path, cv2.IMREAD_GRAYSCALE)
+                check = Astar_T2nod(t2no[each[-1]].T, t2nd[each[-1]].T)
+                start = tuple(np.int16(each[4:6]*(128/300)))
                 goal = tuple(np.int16(each[2:4]*(128/300)))
+                print(start, goal, each[-1])
                 path = check.run_search(start,goal, euclidean_dist)
-                # print(start, goal, each[-1])
                 if path is not None:
                     # print(path, each[-1])
                     # print(np.array(path))

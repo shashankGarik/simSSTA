@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 
 class Astar_T2nod:
-    def __init__(self, t2no, t2nd, max_time_step = 50, d = 1):
+    def __init__(self, t2no, t2nd, max_time_step = 50, d = 5):
         self.t2no = t2no
         self.t2nd = t2nd
         self.max_time_step = max_time_step
@@ -61,8 +61,6 @@ class Astar_T2nod:
             return True
         return False
 
-
-    
     def run_search(self, start_state, goal_state, heuristic_cost = manhattan_dist):
 
         frontier = PriorityQueue()
