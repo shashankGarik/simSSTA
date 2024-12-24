@@ -15,7 +15,7 @@ import cv2
 
 class CarSimulation(Environment):
     def __init__(self, obstacle_vec):
-        super().__init__(args.window_height, args.window_width, obstacle_vec)
+        super().__init__(args.window_height, args.window_width, obstacle_vec, args)
 
         # Initialize Pygame necessary for initialising the simulation window and graphics
         print('Initializing Agents')
@@ -98,7 +98,7 @@ class CarSimulation(Environment):
 
 
             ##################### get predictions and visualise#######################
-            if self.do_inference or self.enable_ssta_agents:
+            if self.do_inference or self.enable_ssta_agents or self.save_data:
                 inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
                 t2no, t2nd, vis = self.predictor.get_predictions(np.array(inputs))
 
@@ -117,6 +117,7 @@ class CarSimulation(Environment):
 
             #intersection for visualisation
             if self.enable_ssta_agents:
+                # print("sstaing")
                 self.intersections_apf=self.apf_ssta_agents.apf_control.intersection()
                 self.intersections_ssta=self.apf_ssta_agents.ssta_control.intersection()
                 self.intersections=np.hstack([self.intersections_apf,self.intersections_ssta])
@@ -192,7 +193,7 @@ class CarSimulation(Environment):
                 #getting the agents in the frame
                 # print(camera_x_local,len(camera_x_local))
                 #saving camera1 dataset
-                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 6000, 0, 0, 0)#side_length,square dimensions,timer,train,test,val,gap(buffer)
+                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 6000, 500, 0, 500)#side_length,square dimensions,timer,train,test,val,gap(buffer)
                 # saving camera csv file (TO DOOOOOOO)
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
             if self.save_video and self.duration[0] < self.timer and self.duration[1] >= self.timer:

@@ -9,7 +9,7 @@ from test_cases import *
 
 
 class Environment():
-    def __init__(self, height, width, obs_vec):
+    def __init__(self, height, width, obs_vec, args):
         # Initialize Pygame necessary for initialising the simulation window and graphics
         print('Initializing Environment')
         pygame.init()
@@ -17,6 +17,8 @@ class Environment():
         # Define screen dimensions
         self.height,self.width = height,width
         self.screen = pygame.display.set_mode((self.width, self.height))
+
+        self.save_dir = args.save_data_dir
         
         #df for csv files
         self.dataframe_columns = ["Index","TotalAgents","LocalPoints", "GlobalPoints"]
@@ -395,7 +397,7 @@ class Environment():
         else:
             data_type = None # stop saving
 
-        main_path = "C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/"
+        main_path = self.save_dir
 
         if data_type != None:
             branched_path = main_path + data_type

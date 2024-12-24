@@ -90,7 +90,7 @@ def T2NO(input_video_name_dir=r'dataset/', num_test=150, first_skip=0, thres=70.
                         if mode == 'static':
                             print(each_view,'this')
                             # print(os.path.join('C:/Users/shash/OneDrive/Desktop/SSTA_2/simSSTA/dataset/background/',str(each_view),'background.jpg'))
-                            B = cv2.imread(os.path.join(r'dataset/background/',str(each_view), 'background.jpg')).astype(np.uint8)
+                            B = cv2.imread(os.path.join(r'dataset/background/', 'background.jpg')).astype(np.uint8)
                             B = cv2.cvtColor(B, cv2.COLOR_BGR2GRAY)
                         #creation of the background image
                         elif mode == 'mean':

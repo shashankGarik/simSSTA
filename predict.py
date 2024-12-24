@@ -223,10 +223,10 @@ class SSTA_predictor:
         # print(masked_data[:,1,100,100])
         t2nd_img = np.argmin(masked_data, axis=0) 
 
-        # only_inf_or_128 = np.all((masked_data == 255) | np.isinf(masked_data), axis=0)
+        obstacles = np.all((data_stack == 255), axis=0)
 
         # # Step 6: Handle edge cases
-        # t2nd_img = np.where(only_inf_or_128, self.t2n_gt_time, t2nd_img)  # Use argmax index if no valid min exists
+        t2nd_img = np.where(obstacles, self.t2n_gt_time, t2nd_img)  # Use argmax index if no valid min exists
 
         self.q_E.get()
         return t2no_img, t2nd_img

@@ -100,9 +100,7 @@ class DoubleIntegratorSSTA:
             self.apf_agents = np.hstack([self.apf_agents[:,:4] + self.dt * v,self.apf_agents[:,4:]])
         else:
             self.apf_agents = self.apf_agents[:,:4] + self.dt * v
-        
-
-        
+    
 
     def step_ssta(self): 
 
@@ -394,12 +392,4 @@ class DoubleIntegratorSSTA:
         collision= np.logical_or.reduce(obstacle_logic)
         return collision
     
-
-    class controlSSTA:
-        def __init__(self, T2NO_dirs, ):
-            pass
-        def _compute_paths(self, t2nod, start_pos, goal_pos):
-            pass
-        def path2global(self, paths, tranforms):
-            pass
         

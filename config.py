@@ -12,8 +12,8 @@ parser.add_argument('--num_hidden', type=str, default='32,32,32,64', help='64,64
 parser.add_argument('--stride', type=int, default=1)
 
 ######################## SSTA inference params ########################
-parser.add_argument('--ssta_ckpt_dir', type=str, default='/home/sgarikipati7/packages/simSSTA/ssta_vae_trained_models/ssta_file/51', help='checkpoint dir')
-parser.add_argument('--vae_ckpt_dir', type=str, default='/home/sgarikipati7/packages/simSSTA/ssta_vae_trained_models/vae_file',help='None')
+parser.add_argument('--ssta_ckpt_dir', type=str, default='./ssta_vae_trained_models/ssta_file/51', help='checkpoint dir')
+parser.add_argument('--vae_ckpt_dir', type=str, default='./ssta_vae_trained_models/vae_file',help='None')
 parser.add_argument('--num_views', type=int, default=2)
 parser.add_argument('--device', type=str, default='cuda:0')
 parser.add_argument('--message_type', type=str, default='raw_data', help='normal, zeros, randn, raw_data, vae')
@@ -28,12 +28,13 @@ parser.add_argument('--t2n_cmap', type = str, default = 'viridis', help ="viridi
 
 ######################## Simulation environment params ########################
   ############# Flags ########################
-parser.add_argument('--debugging', type = bool, default = False, help ="Show debugging points and view frames(ssta) or not")
-parser.add_argument('--save_data', type = bool, default = False, help ="Saves the  input frames and t2no/d images  or not")
+parser.add_argument('--debugging', type = bool, default = True, help ="Show debugging points and view frames(ssta) or not")
+parser.add_argument('--save_data', type = bool, default = True, help ="Saves the  input frames and t2no/d images  or not")
+parser.add_argument('--save_data_dir', type = str, default='./dataset/')
 parser.add_argument('--save_video', type = bool, default = True, help ="Saves the video of the SSTA")
 parser.add_argument('--save_inference', type = bool, default = True, help ="Saves the video of the SSTA")
 parser.add_argument('--video_duration', type = int, nargs= '+',default = (250,1250), help = "(start_frame, end_frame)")
-parser.add_argument('--inference_duration', type = int, nargs= '+',default = (250,1250), help = "(start_frame, end_frame)")
+parser.add_argument('--inference_duration', type = int, nargs= '+',default = (250,3000), help = "(start_frame, end_frame)")
 
 parser.add_argument('--enable_ssta_agents', type = bool, default = True, help ="Add in SSTA agents to the APF agents or not")
 parser.add_argument('--generate_new_agents', type = bool, default = True, help ="generate/spawn new agents")
