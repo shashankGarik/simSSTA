@@ -47,6 +47,12 @@ class Planners():
                     return self.path
         
         return self.path
+    
+    def manual_ssta_planned_path(self,ssta_agents_goal_poses, timer, ssta_path_indices):
+        print(ssta_agents_goal_poses)
+
+        print(ssta_path_indices.shape)
+        pass
 
 
 

@@ -98,7 +98,7 @@ class CarSimulation(Environment):
 
 
             ##################### get predictions and visualise#######################
-            if self.do_inference and self.enable_ssta_agents:
+            if self.do_inference and self.enable_ssta_agents and not args.manual_path_plan_ssta:
                 inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
                 t2no, t2nd, vis = self.predictor.get_predictions(np.array(inputs))
 
@@ -132,18 +132,18 @@ class CarSimulation(Environment):
 
                 #ssta agents local and global points
                 local_cur_points, global_cur_points,global_goal_points,camera_points_indices=self.camera_agents(local_cur_points_ssta,self.side_length, self.ssta_car_pos,self.ssta_goal_pos)
-                
 
                 ###########Check
-                
                 self.apf_ssta_agents.ssta_goal_pos,_,self.apf_ssta_agents.ssta_control.combined_camera_indices=self.global_local_goal(self.ssta_goal_pos,camera_points_indices,local_cur_points,global_cur_points,global_goal_points,(t_l,t_r,b_l,b_r),self.frame_angle)
-                
-                
                 
                 ##returns local path
                 #return as view,n,m,2
                 self.ssta_path_indices=self.apf_ssta_agents.ssta_control.path_indices
-                local_path_test=self.path_planner.a_star(self.apf_ssta_agents.ssta_goal_pos, self.timer, self.ssta_path_indices, t2no, t2nd)
+                if not args.manual_path_plan_ssta:
+                    local_path_test=self.path_planner.a_star(self.apf_ssta_agents.ssta_goal_pos, self.timer, self.ssta_path_indices, t2no, t2nd)
+                if args.manual_path_plan_ssta:
+                    local_path_test=self.path_planner.manual_ssta_planned_path(self.apf_ssta_agents.ssta_goal_pos, self.timer, self.ssta_path_indices)
+
                 self.apf_ssta_agents.ssta_control.global_agent_paths=self.transform_local_to_global_path_vectorized(local_path_test,camera_points_indices,t_l,self.frame_angle,n=len(self.ssta_goal_pos),k=self.path_size)
                 self.apf_ssta_agents.ssta_control.global_agent_paths=np.full(local_cur_points[0].shape,None)
 

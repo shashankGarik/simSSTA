@@ -39,6 +39,7 @@ parser.add_argument('--enable_ssta_agents', type = bool, default = True, help ="
 parser.add_argument('--generate_new_agents', type = bool, default = True, help ="generate/spawn new agents")
 parser.add_argument('--display_metric', type = bool, default = True, help ="Displays the metrics when set to True")
 parser.add_argument('--display_realistic', type = bool, default = False, help ="Makes the agents with a realistic image")
+parser.add_argument('--manual_path_plan_ssta', type = bool, default = True, help ="Makes the agents with a realistic image")
 
 
   ############# Simulation Display Parameters ########################
