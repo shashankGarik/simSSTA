@@ -5,8 +5,8 @@ import math,cv2
 # from PIL import Image, ImageDraw
 from controllers_APF import *
 from test_cases import *
-
-
+from config import args
+import os
 
 class Environment():
     def __init__(self, height, width, obs_vec):
@@ -47,10 +47,27 @@ class Environment():
         self.obstacles = obs_vec
         
         # temporary functionality - realistic objects:
-        self.obstacle_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/carssta.jpg'),(65, 65))
-        self.car_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/noentry.jpg'),(60, 60))
-        self.pedestrian_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/pedestrian.PNG'),(30, 30))
-    
+        if args.display_realistic:
+            self.obstacle_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/carssta.jpg'),(65, 65))
+            self.car_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/noentry.jpg'),(60, 60))
+            self.pedestrian_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/pedestrian.PNG'),(30, 30))
+
+        if args.save_data:
+            import os
+
+            main_path = os.path.dirname(os.path.abspath(__file__))
+
+            # Define the potential dataset paths
+            dataset_01_path = os.path.join(main_path, "dataset_01")
+
+            # Check which dataset exists and set it as the main path
+            if os.path.exists(dataset_01_path):
+                raise FileNotFoundError("'dataset_01'  exists in the current directory.")
+            else:
+                self.main_path = dataset_01_path
+                os.mkdir(dataset_01_path)  # Creates the directory
+
+
     def update_poses(self, cur_pos, goal_pos):
         self.cur_pos = cur_pos
         self.goal_pos = goal_pos
@@ -395,12 +412,15 @@ class Environment():
         else:
             data_type = None # stop saving
 
-        main_path = "C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/"
+        # main_path = "C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/"
+        # Get the current working director
+
 
         if data_type != None:
-            branched_path = main_path + data_type
+            import os
+            # branched_path = self.main_path + data_type
+            branched_path = os.path.join(self.main_path, data_type)
             for idx in range(len(frame_sizes)): #iterating for each box
-                import os
                 path = branched_path + "/camera_" + str(idx) 
                 if not os.path.exists(path):
                     os.makedirs(path)
