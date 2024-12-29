@@ -6,7 +6,7 @@ class DoubleIntegratorSSTA:
     acceleration-based PD control using double integrator mode. Multi agent-multi obstacle, 
     Avoids obstacles, and avoids other agent.
     """
-    def __init__(self, x_init, goal_pos, obstacles):
+    def __init__(self, x_init, goal_pos, obstacles,reset_index_global_path_number_ssta):
         self.x = x_init
         self.camera_x=None
         self.goal_pos = goal_pos
@@ -17,8 +17,9 @@ class DoubleIntegratorSSTA:
         self.total_collision=0.0
         self.combined_camera_indices=[(np.array([], dtype=np.int64),)]
         self.agent_collision=np.array([False]*self.x.shape[0])
-        self.global_agent_paths=None
-        self.path_indices= np.array(self.x.shape[0]*[0])
+        self.global_path_points_inbetween=reset_index_global_path_number_ssta
+        # self.global_agent_paths=None
+        # self.path_indices= np.array(self.x.shape[0]*[0])
 
         
 
@@ -63,6 +64,7 @@ class DoubleIntegratorSSTA:
 
         
         error = (( self.apf_agents_goal_pos[:,:2]).astype(np.int32)) - self.apf_agents[:,:2]
+
         dist2goal = np.linalg.norm(error, axis = 1)
     
         goal_close_idx = np.argwhere(dist2goal <= 100)
@@ -106,81 +108,111 @@ class DoubleIntegratorSSTA:
 
     def step_ssta(self): 
 
-        error = (( self.ssta_agents_goal_pos[:,:2]).astype(np.int32)) - self.ssta_agents[:,:2]
-        dist2goal = np.linalg.norm(error, axis = 1)
-    
-        goal_close_idx = np.argwhere(dist2goal <= 100)
-        goal_reached_idx=np.argwhere(dist2goal <= 5.0)
 
-        v_error = 5-self.ssta_agents[:,2:4]
+        ###### To follow without any global path just pass through##########
+        ############################################
 
-        prop_potential = np.zeros((self.ssta_agents[:,:4].shape[0],2))
-        diff_potential = np.zeros((self.ssta_agents[:,:4].shape[0],2))
-
-       
-        prop_potential = np.squeeze(np.dot(self.ssta_Kp[np.newaxis, :,:], error[:,:,np.newaxis])).T
-        prop_potential = self.ssta_desired_force(1000,self.ssta_agents_goal_pos[:,:2])
-
-        diff_potential = np.squeeze(np.dot(self.ssta_Kd[np.newaxis,:,:], v_error[:,:,np.newaxis])).T
-
-
-        control_input = prop_potential + diff_potential 
-        A_x = np.squeeze(np.dot(self.A[np.newaxis,:,:], self.ssta_agents[:,:4,np.newaxis]))
-        B_u = np.squeeze(np.dot(self.B[np.newaxis,:,:], control_input[:,:, np.newaxis]))
-        v = (A_x + B_u).T
-
-        #XXXX collision detetctionXXX
-        #this line to collide show and go
-        
-        self.ssta_agent_collision=np.array([False]*self.ssta_agents.shape[0])
-        v=self.terminate_agent_movement(v,goal_reached_idx)
-
-        if self.ssta_agents.shape[1] > 4:
-            self.ssta_agents = np.hstack([self.ssta_agents[:,:4] + self.dt * v,self.ssta_agents[:,4:]])
-        else:
-            self.ssta_agents = self.ssta_agents[:,:4] + self.dt * v
-        ####
-        # print("XXXXpathindicesXXXX",self.path_indices)
-        
-        # reset_path_indices=np.argwhere(self.path_indices==self.replanning_index)
-        # self.path_indices[reset_path_indices]=0
-
-        # self.global_agent_paths[:,-1]=self.ssta_agents_goal_pos[:,:2]
-
-        # self.camera_indices_global_path=self.global_agent_paths[self.combined_camera_indices]
-        
-        # self.dummy=self.path_indices[self.combined_camera_indices]
-        # self.camera_indices_global_path= self.camera_indices_global_path[np.arange(self.camera_indices_global_path.shape[0]),self.dummy].reshape(-1,2)
-        # error = ((self.camera_indices_global_path).astype(np.int32)) -self.ssta_agents[:,:2]
-
+        # error = (( self.ssta_agents_goal_pos[:,:2]).astype(np.int32)) - self.ssta_agents[:,:2]
         # dist2goal = np.linalg.norm(error, axis = 1)
+    
+        # goal_close_idx = np.argwhere(dist2goal <= 100)
+        # goal_reached_idx=np.argwhere(dist2goal <= 5.0)
+
         # v_error = 5-self.ssta_agents[:,2:4]
+
         # prop_potential = np.zeros((self.ssta_agents[:,:4].shape[0],2))
         # diff_potential = np.zeros((self.ssta_agents[:,:4].shape[0],2))
+
+       
         # prop_potential = np.squeeze(np.dot(self.ssta_Kp[np.newaxis, :,:], error[:,:,np.newaxis])).T
-        # prop_potential = self.ssta_desired_force(1000,self.camera_indices_global_path)
+        # prop_potential = self.ssta_desired_force(1000,self.ssta_agents_goal_pos[:,:2])
+
         # diff_potential = np.squeeze(np.dot(self.ssta_Kd[np.newaxis,:,:], v_error[:,:,np.newaxis])).T
-        # control_input = prop_potential + diff_potential
+
+
+        # control_input = prop_potential + diff_potential 
         # A_x = np.squeeze(np.dot(self.A[np.newaxis,:,:], self.ssta_agents[:,:4,np.newaxis]))
         # B_u = np.squeeze(np.dot(self.B[np.newaxis,:,:], control_input[:,:, np.newaxis]))
         # v = (A_x + B_u).T
-  
+
+        # #XXXX collision detetctionXXX
+        # #this line to collide show and go
+        
+        # self.ssta_agent_collision=np.array([False]*self.ssta_agents.shape[0])
+        # v=self.terminate_agent_movement(v,goal_reached_idx)
+
         # if self.ssta_agents.shape[1] > 4:
         #     self.ssta_agents = np.hstack([self.ssta_agents[:,:4] + self.dt * v,self.ssta_agents[:,4:]])
         # else:
         #     self.ssta_agents = self.ssta_agents[:,:4] + self.dt * v
+        ###
+        ###### To follow without any global path just pass through##########
+        ############################################
+
+
+        ###### To follow with  global path ssta ##########
+        ############################################
+        #### hint solved: play with these two self.ssta_agents and self.ssta_agents_goal_pos To modifyyy:self.ssta_agents_goal_pos
+        ### Core Problem 1: It moves one index only if all reach the index point- Solved....
+        self.ssta_path_indices=self.ssta_agents_goal_pos[:,10]
+        reset_number=self.global_path_points_inbetween
+        reset_path_indices=np.argwhere(self.ssta_path_indices==reset_number)
+        reset_path_indices2=np.argwhere(self.ssta_path_indices==None)
+        self.ssta_agents_goal_pos[reset_path_indices,10]=0
+        self.ssta_agents_goal_pos[reset_path_indices2,10]=0
+        self.ssta_path_indices = np.array(self.ssta_path_indices, dtype=int)
+
+        self.global_agent_paths= self.ssta_agents_goal_pos[:,9]
+   
+        self.camera_indices_global_path=self.global_agent_paths
+        
+        # Pad all arrays to the same shape in one go using `np.stack` and `np.pad`
+        #This converts the list of array to n,global_path_points,2 / ex:2,10,2
+        self.camera_indices_global_path = np.stack([
+            np.pad(arr, ((0, self.global_path_points_inbetween - arr.shape[0]), (0, 0)), mode='constant', constant_values=0)
+            if arr.shape[0] < self.global_path_points_inbetween else arr[:self.global_path_points_inbetween]  # Trim if necessary
+            for arr in self.camera_indices_global_path
+        ])
+
+        #this line needs to take [0,1,...] and the paths to give n,2 
+        indexed_global_path_pt = self.camera_indices_global_path[np.arange(len(self.ssta_path_indices)), self.ssta_path_indices]
+        error = ((indexed_global_path_pt).astype(np.int32)) -self.ssta_agents[:,:2]
+
+        dist2goal = np.linalg.norm(error, axis = 1)
+        v_error = 5-self.ssta_agents[:,2:4]
+        prop_potential = np.zeros((self.ssta_agents[:,:4].shape[0],2))
+        diff_potential = np.zeros((self.ssta_agents[:,:4].shape[0],2))
+        prop_potential = np.squeeze(np.dot(self.ssta_Kp[np.newaxis, :,:], error[:,:,np.newaxis])).T
+        prop_potential = self.ssta_desired_force(1000,indexed_global_path_pt)
+        diff_potential = np.squeeze(np.dot(self.ssta_Kd[np.newaxis,:,:], v_error[:,:,np.newaxis])).T
+        control_input = prop_potential + diff_potential
+        A_x = np.squeeze(np.dot(self.A[np.newaxis,:,:], self.ssta_agents[:,:4,np.newaxis]))
+        B_u = np.squeeze(np.dot(self.B[np.newaxis,:,:], control_input[:,:, np.newaxis]))
+        v = (A_x + B_u).T
+  
+        if self.ssta_agents.shape[1] > 4:
+            self.ssta_agents = np.hstack([self.ssta_agents[:,:4] + self.dt * v,self.ssta_agents[:,4:]])
+        else:
+            self.ssta_agents = self.ssta_agents[:,:4] + self.dt * v
         
         # # switching between goals
-        # mask_dist2goal=np.full((self.x.shape[0],2),np.inf)
-        # mask_dist2goal[self.ssta_indices]=dist2goal
-        # increase_goal=np.where(mask_dist2goal<=4)
-        # self.path_indices[increase_goal[0]]+=1
-        # print(  "inside",self.path_indices)
-        # print(self.camera_indices_global_path)
+        mask_dist2goal=np.full((self.ssta_agents.shape[0],2),np.inf)
+        # print(mask_dist2goal)
+        mask_dist2goal=dist2goal
+        # print("mask",mask_dist2goal)
+        increase_goal=np.where(mask_dist2goal<=4)
+        # print("what to increase",increase_goal)
+        self.ssta_path_indices[increase_goal[0]]+=1
+        self.ssta_agents_goal_pos[:,10]=self.ssta_path_indices
+        # print(  "index",self.ssta_path_indices)
+        ###### To follow with  global path ssta ##########
+        ############################################
+
 
     def car_pos(self):
         ##split self.x as apf and ssta
         # split self.x as 
+        
         self.frame_agents()
         self.apf_indices=np.argwhere(self.goal_pos[:,4]==None).flatten()
         self.ssta_indices=np.argwhere(self.goal_pos[:,4]!=None).flatten()
@@ -196,6 +228,7 @@ class DoubleIntegratorSSTA:
         #can be used later for step ssta()
         # self.ssta_ssta_agent_potential,self.ssta_ssta_agent_distance=self.ssta_agent_potential[self.ssta_indices],self.ssta_agent_distance[self.ssta_indices]
 
+        
         self.step_apf()
         if self.ssta_agents.shape[0]!=0:
             self.step_ssta()
@@ -205,6 +238,7 @@ class DoubleIntegratorSSTA:
         self.agent_collision[self.apf_indices]=self.apf_agent_collision
         self.x[self.apf_indices]=self.apf_agents
         self.x[self.ssta_indices]=self.ssta_agents
+        self.goal_pos[self.ssta_indices]=self.ssta_agents_goal_pos
         # print("XXXXXXXXXXXXXXXXXXXXXXXX",len(self.x),len(self.ssta_agents),len(self.apf_agents))
         self.frame_agents()
         self.remove_agent_goal()

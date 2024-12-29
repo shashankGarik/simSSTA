@@ -138,6 +138,7 @@ class Environment():
         local_points = homogeneous_local_points[:,:, :2]
         return local_points
     
+    
 
     # #3##########################l-g
     ## for one frame /view any number of points
@@ -168,12 +169,12 @@ class Environment():
             global_path_view_points = rotated_points + translation_vector
             # print(global_path_view_points.shape,global_path_matrix.shape)
             # remove this below condition later
-            if len(ssta_camera_indices[view][0])!=0:
-                global_path_matrix[ssta_camera_indices[view][0]]=global_path_view_points
+            # if len(ssta_camera_indices[view][0])!=0:
+            #     global_path_matrix[ssta_camera_indices[view][0]]=global_path_view_points
         
         # print(global_path_matrix.shape)
         
-        return global_path_matrix
+        return global_path_view_points
 
     ################ Display Metrics ########################
     def display_collision_rate(self,collision_value):
@@ -225,6 +226,21 @@ class Environment():
         #     for point_set in self.intersections:
         #         for x, y in point_set:
         #             pygame.draw.circle(self.screen, self.colors['black'], (x, y), 3)
+    def plot_global_path_ssta(self, global_agent_paths, color='blue'):
+        """
+        Plots global paths while skipping any path segments with NaN values.
+
+        Args:
+            global_agent_paths (list of numpy.ndarray): List of global paths for agents. Each path is an array of 2D points.
+            color_path (str): Color key for the path. Default is 'blue'.
+            path_thickness (int): Thickness of the path lines. Default is 2.
+        """
+        for pt in global_agent_paths:
+                if  pt is not None:
+                    for point_set in pt:
+                            if point_set[0] is not None:
+                                pygame.draw.circle(self.screen, self.colors[color], (point_set[0], point_set[1]), 3)
+
 
     def plot_segment_frame(self,center,box_points, frame_color = 'black'):
         # print("inside")
@@ -333,14 +349,14 @@ class Environment():
         combined_camera_indices = np.concatenate([arr[0] for arr in camera_points_indices])
         mask = np.ones(len(ssta_goal_pos), dtype=bool)
         mask[combined_camera_indices] = False
-        ssta_goal_pos[mask,2:]=np.full(((abs(len(ssta_goal_pos)-len(combined_camera_indices))),5), None)#if agent exits box everything will become none
+        ssta_goal_pos[mask,2:]=np.full(((abs(len(ssta_goal_pos)-len(combined_camera_indices))),ssta_goal_pos[0].shape[0]-2),None)#if agent exits box everything will become none
 
 
 
         for view in range(len(agents_global_points)):
-            local_goal_view=ssta_goal_pos[camera_points_indices[view],-1].flatten()
+            local_goal_view=ssta_goal_pos[camera_points_indices[view],-7].flatten()
             
-            # local_mask=np.full(len(camera_points_indices[view]),False ,dtype=bool)
+            local_mask=np.full(len(camera_points_indices[view]),False ,dtype=bool)
             
             none_indices=np.argwhere(local_goal_view==None)
             
@@ -352,16 +368,19 @@ class Environment():
             square = [(t_l[view][0],t_l[view][1]),(t_r[view][0],t_r[view][1]),(b_r[view][0],b_r[view][1]),(b_l[view][0],b_l[view][1])]  # Square defined by its four corners
             # Find intersections
             intersection_view = self.find_segment_square_intersection(segment, square)
-            # print(intersection_view.shape)
             # print("Intersection Points:", intersections)
             intersections_all.append(intersection_view)
             # intersections_global_frame[none_indices_camera_view]=intersection_view
             # intersections_all.append(intersection_view)
             #converting view_goal_global_point to view_goal_local_Point
             goal_view_points_ssta = self.global_local_transform(intersection_view,t_l,frame_angle)
+            transformed_array = np.repeat(intersection_view[np.newaxis, :, :], len(agents_global_points), axis=0)
+            # print(goal_view_points_ssta.shape,transformed_array.shape)
+
             ssta_goal_pos[camera_temp_indices,2:4]=np.round(np.float64(goal_view_points_ssta[view][none_indices]),2) #adding global local
             ssta_goal_pos[camera_points_indices[view],4:6]=np.round(local_cur_points[view],2) # adding local curr point
-            ssta_goal_pos[camera_points_indices[view],6]=np.full((len(intersection_view),), view)
+            ssta_goal_pos[camera_temp_indices,6:8]=np.round(np.float64(transformed_array[view][none_indices]),2) #global box goal
+            ssta_goal_pos[camera_points_indices[view],8]=np.full((len(intersection_view),), view)
    
         
         return ssta_goal_pos,intersections_all,combined_camera_indices

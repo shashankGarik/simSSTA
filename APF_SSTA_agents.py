@@ -3,7 +3,7 @@ from config import args
 
 
 class APFSSTAAgents():
-    def __init__(self,obstacles,controller_apf,controller_ssta,frame_rate,infinity):
+    def __init__(self,obstacles,controller_apf,controller_ssta,frame_rate,infinity,reset_index_global_path_number_ssta):
         self.obstacles = obstacles
         ##APF agent initialise
         self.apf_car_pos = np.array([[-50.0, 300.0, 0.0, 0.0, 0, 15, 3]])# startx,starty,vx,vy,colour,radius,shape(agent)
@@ -14,9 +14,9 @@ class APFSSTAAgents():
         # self.car_pos = np.array([[-20.0, 300.0, 0.0, 0.0, 6, 15, -1],[-10.0, 50.0, 0.0, 0.0,6, 15, -1],[-10.0, 80.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
         # # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal_y,local_goal_x(intersection_x),local_goal_y(intersection_y)
         # self.goal_pos = np.array([[1500, 600,None,None,None,None,None],[1500, 400,None,None,None,None,None],[1500, 500,None,None,None,None,None]]) # globalgx,globalgy,goalviewlocalgx,goalviewlocalgy,currlocalviewx,currlocalviewy,view/segment
-        self.ssta_car_pos = np.array([[-10.0, 100.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
+        self.ssta_car_pos = np.array([[-10.0, 100.0, 0.0, 0.0,6, 15, -1],[-14.0, 100.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
         # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal,y,local_goal_x(intersection_x),local_goal_y(intersection_y)
-        self.ssta_goal_pos = np.array([[1000, 150,None,None,None,None,None]]) 
+        self.ssta_goal_pos = np.array([[1000, 150,None,None,None,None,None,None,None,None,None],[1000, 250,None,None,None,None,None,None,None,None,None]]) # globalgx,globalgy,goalviewlocalgx,goalviewlocalgy,currlocalviewx,currlocalviewy,global_frame_goalx,global_frame_goaly,view/segment,globalpath,path_index
         # self.car_pos = np.array([[-10.0, 300.0, 0.0, 0.0,6, 15, -1],[-50.0, 0.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
         # # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal,y,local_goal_x(intersection_x),local_goal_y(intersection_y)
         # self.goal_pos = np.array([[1000, 100,None,None,None,None,None],[200, 800,None,None,None,None,None]]) 
@@ -24,7 +24,7 @@ class APFSSTAAgents():
 
         self.infinity = infinity
         self.apf_control = controller_apf(self.apf_car_pos, self.apf_goal_pos, self.obstacles)#apf controller
-        self.ssta_control = controller_ssta(self.ssta_car_pos, self.ssta_goal_pos, self.obstacles)#ssta controller
+        self.ssta_control = controller_ssta(self.ssta_car_pos, self.ssta_goal_pos, self.obstacles,reset_index_global_path_number_ssta)#ssta controller
         self.apf_control.dt = 1/frame_rate
         self.ssta_control.dt = 1/frame_rate
         self.apf_control.frame_h,self.apf_control.frame_w =args.window_height,args.window_width
@@ -112,6 +112,7 @@ class APFSSTAAgents():
         ssta_new_agents["start"]=ssta_start_points
         ssta_new_agents["goal"]=ssta_goal_array
         # print(apf_start_points.shape,apf_goal_points.shape,ssta_start_points.shape,ssta_goal_array.shape)
+
         return apf_new_agents,ssta_new_agents
 
 
