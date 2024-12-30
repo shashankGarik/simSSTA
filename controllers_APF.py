@@ -203,7 +203,8 @@ class DoubleIntegratorAPF:
         radii = radii*m_factor
 
         if len(x_c) == 1:
-            return np.array([[0.0]]),None
+            return np.array([[0.0]]),np.array([[np.inf]])
+        
         diff = x_c[:,:2][:,np.newaxis,:] - x_c[:,:2][np.newaxis,:,:]
         dist = np.squeeze(np.linalg.norm(diff, axis = 2)[:,:,np.newaxis])
         np.fill_diagonal(dist, np.inf)

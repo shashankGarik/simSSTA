@@ -14,12 +14,11 @@ class APFSSTAAgents():
         # self.car_pos = np.array([[-20.0, 300.0, 0.0, 0.0, 6, 15, -1],[-10.0, 50.0, 0.0, 0.0,6, 15, -1],[-10.0, 80.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
         # # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal_y,local_goal_x(intersection_x),local_goal_y(intersection_y)
         # self.goal_pos = np.array([[1500, 600,None,None,None,None,None],[1500, 400,None,None,None,None,None],[1500, 500,None,None,None,None,None]]) # globalgx,globalgy,goalviewlocalgx,goalviewlocalgy,currlocalviewx,currlocalviewy,view/segment
-        self.ssta_car_pos = np.array([[-10.0, 100.0, 0.0, 0.0,6, 15, -1],[-14.0, 100.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
-        # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal,y,local_goal_x(intersection_x),local_goal_y(intersection_y)
-        self.ssta_goal_pos = np.array([[1000, 150,None,None,None,None,None,None,None,None,None],[1000, 250,None,None,None,None,None,None,None,None,None]]) # globalgx,globalgy,goalviewlocalgx,goalviewlocalgy,currlocalviewx,currlocalviewy,global_frame_goalx,global_frame_goaly,view/segment,globalpath,path_index
-        # self.car_pos = np.array([[-10.0, 300.0, 0.0, 0.0,6, 15, -1],[-50.0, 0.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
-        # # goal = np.array([[800, 1500],[700, 1600]])  # global_goal_x,global_goal,y,local_goal_x(intersection_x),local_goal_y(intersection_y)
-        # self.goal_pos = np.array([[1000, 100,None,None,None,None,None],[200, 800,None,None,None,None,None]]) 
+        # self.ssta_car_pos = np.array([[-10.0, 100.0, 0.0, 0.0,6, 15, -1],[-14.0, 100.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
+        # self.ssta_goal_pos = np.array([[1000, 150,None,None,None,None,None,None,None,None,None],[1000, 250,None,None,None,None,None,None,None,None,None]]) # globalgx,globalgy,goalviewlocalgx,goalviewlocalgy,currlocalviewx,currlocalviewy,global_frame_goalx,global_frame_goaly,view/segment,globalpath,path_index
+
+        self.ssta_car_pos = np.array([[-10.0, 100.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
+        self.ssta_goal_pos = np.array([[1000, 150,None,None,None,None,None,None,None,None,None]]) # globalgx,globalgy,goalviewlocalgx,goalviewlocalgy,currlocalviewx,currlocalviewy,global_frame_goalx,global_frame_goaly,view/segment,globalpath,path_index
         
 
         self.infinity = infinity
@@ -56,20 +55,27 @@ class APFSSTAAgents():
             self.ssta_goal_pos = self.ssta_control.goal_pos  
         ###
 
-        #combine all of apf and ssta agents
 
+
+        #combine all of apf and ssta agents
         all_agents=self.apf_car_pos
         if  self.enable_ssta_agents:all_agents=np.vstack([self.apf_car_pos,self.ssta_car_pos])
         ##finding the agent-agent replsuion for all agents split later
-        all_agents_potential,all_agents_distance=self.apf_control.avoid_agents(9, 60000, all_agents)#100000  
         
-        #Splitting agent potential based on apf and ssta
-        self.apf_control.apf_agent_potential,self.apf_control.apf_agent_distance = all_agents_potential[:self.apf_car_pos.shape[0]],all_agents_distance[:self.apf_car_pos.shape[0]] 
-        if  self.enable_ssta_agents:self.ssta_control.ssta_agent_potential,self.ssta_control.ssta_agent_distance = all_agents_potential[self.apf_car_pos.shape[0]:],all_agents_distance[self.apf_car_pos.shape[0]:] 
+        self.all_agents_potential,self.all_agents_distance=self.apf_control.avoid_agents(9, 60000, all_agents)#100000 
 
+        if len(self.apf_car_pos)!=0:self.apf_control.apf_agent_potential,self.apf_control.apf_agent_distance = self.all_agents_potential[:self.apf_car_pos.shape[0]],self.all_agents_distance[:self.apf_car_pos.shape[0]] 
+        
+        if  self.enable_ssta_agents and  len(self.ssta_car_pos)!=0:self.ssta_control.ssta_agent_potential,self.ssta_control.ssta_agent_distance = self.all_agents_potential[self.apf_car_pos.shape[0]:],self.all_agents_distance[self.apf_car_pos.shape[0]:] 
+
+        if len(self.apf_car_pos)==0:self.apf_control.apf_agent_potential,self.apf_control.apf_agent_distance = self.all_agents_potential,self.all_agents_distance
+        
+        if  self.enable_ssta_agents and  len(self.ssta_car_pos)==0:self.ssta_control.ssta_agent_potential,self.ssta_control.ssta_agent_distance = self.all_agents_potential,self.all_agents_distance
+        
         #updating the pos for ssta and apd seperately      
-        self.apf_car_pos,self.apf_goal_pos = self.apf_control.car_pos()
-        if  self.enable_ssta_agents:self.ssta_car_pos,self.ssta_goal_pos=self.ssta_control.car_pos()  
+        if len(self.apf_car_pos)!=0:self.apf_car_pos,self.apf_goal_pos = self.apf_control.car_pos()
+        if  len(self.ssta_car_pos)!=0 and self.enable_ssta_agents:self.ssta_car_pos,self.ssta_goal_pos=self.ssta_control.car_pos()  
+
 
         # if timer%100==0:
         #     if  self.enable_ssta_agents:

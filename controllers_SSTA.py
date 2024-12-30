@@ -87,6 +87,9 @@ class DoubleIntegratorSSTA:
                 obstacle_potential[goal_close_idx] = np.array([0.0,0.0])
 
         control_input = prop_potential + diff_potential + obstacle_potential + self.ssta_apf_agent_potential
+
+
+
         A_x = np.squeeze(np.dot(self.A[np.newaxis,:,:], self.apf_agents[:,:4,np.newaxis]))
         B_u = np.squeeze(np.dot(self.B[np.newaxis,:,:], control_input[:,:, np.newaxis]))
         v = (A_x + B_u).T
@@ -224,6 +227,9 @@ class DoubleIntegratorSSTA:
         self.ssta_agents_goal_pos=self.goal_pos[self.ssta_indices]
 
         self.ssta_apf_agent_potential,self.ssta_apf_agent_distance=self.ssta_agent_potential[self.apf_indices],self.ssta_agent_distance[self.apf_indices]
+
+        # print(self.ssta_apf_agent_potential.shape,self.ssta_apf_agent_distance.shape)
+
 
         #can be used later for step ssta()
         # self.ssta_ssta_agent_potential,self.ssta_ssta_agent_distance=self.ssta_agent_potential[self.ssta_indices],self.ssta_agent_distance[self.ssta_indices]

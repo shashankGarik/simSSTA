@@ -41,7 +41,7 @@ parser.add_argument('--generate_new_agents', type = bool, default = True, help =
 parser.add_argument('--display_metric', type = bool, default = True, help ="Displays the metrics when set to True")
 parser.add_argument('--display_realistic', type = bool, default = False, help ="Makes the agents with a realistic image")
 parser.add_argument('--manual_path_plan_ssta', type = bool, default = True, help ="Makes the agents with a realistic image")
-parser.add_argument('--global_path_intermediate_points', type = int, default = 7, help ="Makes the agents with a realistic image")
+parser.add_argument('--global_path_intermediate_points', type = int, default = 10, help ="Makes the agents with a realistic image")
 
 
 
@@ -51,7 +51,7 @@ parser.add_argument('--window_width', type = int, default =1000 , help ="Simulat
 parser.add_argument('--window_height', type = int, default =800 , help ="Simulation Window Height")
 parser.add_argument('--frame_rate', type = int, default =60 , help =" Display Frame Rate")
 parser.add_argument('--agents_spawning_frequency', type = int, default = 100 , help =" Time interval at which new agents are created")
-parser.add_argument('--ssta_spawning_percentage', type = int, default = 10 , help =" Precentage of SSTA agents in the newly spawned agents")
+parser.add_argument('--ssta_spawning_percentage', type = int, default = 60 , help =" Precentage of SSTA agents in the newly spawned agents")
 
  ############ static definition simulation ##########
 parser.add_argument('--ssta_boxes', type = list, default = np.array([[-60,300,400,300],[-60,450,50,300]]) , help =" ssta box dimensions #angle,x,y,size")

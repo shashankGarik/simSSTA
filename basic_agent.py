@@ -13,7 +13,7 @@ import sys
 import cv2
 
 
-###########    Core Problem2 :: None case for both apf and ssta agents   , code breaks if either one of the agent becomes None   ###### 
+###########    Solved -----Core Problem2 :: None case for both apf and ssta agents   , code breaks if either one of the agent becomes None   ###### 
 
 class CarSimulation(Environment):
     def __init__(self, obstacle_vec):
@@ -88,8 +88,6 @@ class CarSimulation(Environment):
             if self.enable_ssta_agents:
                 self.ssta_car_pos,self.ssta_goal_pos = self.apf_ssta_agents.generate_ssta_agents()
 
-
-
             #concatenating apf and ssta agents
             if self.enable_ssta_agents:
                 self.car_pos=np.vstack([self.apf_car_pos,self.ssta_car_pos])
@@ -97,6 +95,7 @@ class CarSimulation(Environment):
             else:
                 self.car_pos=self.apf_car_pos
                 self.goal_pos=self.apf_goal_pos
+
 
             #setting the agent poses in the environment for displaying
             self.update_poses(self.car_pos, self.goal_pos)
@@ -124,7 +123,7 @@ class CarSimulation(Environment):
             ############################################
            
             #intersection for visualisation
-            if self.enable_ssta_agents:
+            if self.enable_ssta_agents and len(self.ssta_car_pos)>0:
                 self.intersections_apf=self.apf_ssta_agents.apf_control.intersection()
                 self.intersections_ssta=self.apf_ssta_agents.ssta_control.intersection()
                 self.intersections=np.hstack([self.intersections_apf,self.intersections_ssta])
@@ -174,7 +173,7 @@ class CarSimulation(Environment):
             self.plot_segment_frame(centers,(t_l,t_r,b_l,b_r))
 
             ### Plotting of global ssta paths after calculation
-            if self.debugging:self.plot_global_path_ssta(global_paths)
+            if self.debugging and  len(self.ssta_car_pos)>0:self.plot_global_path_ssta(global_paths)
 
         
             #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
