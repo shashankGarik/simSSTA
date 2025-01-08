@@ -159,7 +159,7 @@ class CarSimulation(Environment):
                     segment_numbers=self.apf_ssta_agents.ssta_goal_pos[:,8]
                     global_paths=self.apf_ssta_agents.ssta_goal_pos[:,9]
 
-                    global_paths=self.path_planner.compute_global_paths(curr_global_pnts,global_frame_goal_pnts,segment_numbers,global_paths,self.ssta_boxes,self.reset_index_global_path_number_ssta)
+                    global_paths=self.path_planner.straigh_path_w_noise(curr_global_pnts,global_frame_goal_pnts,segment_numbers,global_paths,self.ssta_boxes,self.reset_index_global_path_number_ssta)
                     self.apf_ssta_agents.ssta_goal_pos[:,9]=global_paths
 
             else:

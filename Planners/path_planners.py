@@ -49,7 +49,22 @@ class Planners():
         
         return self.path
 
-    def straigh_path_w_noise(self,curr_global_pnts, global_frame_goal_pnts, segment_numbers, global_paths, ssta_boxes, num_points=3):
+    def straigh_path_w_noise(self,curr_global_pnts, global_frame_goal_pnts, segment_numbers, global_paths, ssta_boxes, num_points=20):
+        """
+        Compute global paths for agents based on their current and goal positions,
+        segment assignments, and segment-specific boxes.
+
+        Args:
+            curr_global_pnts (np.ndarray): Current positions of agents (n, 2).
+            global_frame_goal_pnts (np.ndarray): Goal positions of agents (n, 2).
+            segment_numbers (list or np.ndarray): Segment box index for each agent (n,).
+            global_paths (list): Existing paths for agents (n,).
+            ssta_boxes (np.ndarray): Array of segment-specific boxes (m, 4) [angle, x, y, size].
+            num_points (int): Number of points in the path (including start and goal).
+
+        Returns:
+            list: Updated global paths for agents.
+        """
         n_agents = len(curr_global_pnts)
         updated_paths = list(global_paths)  # Copy to avoid modifying the input directly
         for i in range(n_agents):
@@ -57,10 +72,20 @@ class Planners():
             if updated_paths[i] is not None or segment_numbers[i] is None:
                 continue
 
+            segment_idx = segment_numbers[i]
+
+            # Ensure the segment index is valid
+            if not (0 <= segment_idx < len(ssta_boxes)):
+                updated_paths[i] = None
+                continue
+
+            path = np.linspace(curr_global_pnts[i], global_frame_goal_pnts[i], num_points)
+            path += np.random.randn(*path.shape)*3
+            updated_paths[i] = path
 
         return updated_paths
 
-    def compute_global_paths(self,curr_global_pnts, global_frame_goal_pnts, segment_numbers, global_paths, ssta_boxes, num_points=3):
+    def compute_global_paths(self,curr_global_pnts, global_frame_goal_pnts, segment_numbers, global_paths, ssta_boxes, num_points=20):
         """
         Compute global paths for agents based on their current and goal positions,
         segment assignments, and segment-specific boxes.
