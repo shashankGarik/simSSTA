@@ -105,7 +105,7 @@ class CarSimulation(Environment):
 
             
             ##################### get predictions and visualise#######################
-            if self.do_inference and self.enable_ssta_agents and not args.manual_path_plan_ssta:
+            if self.do_inference and self.enable_ssta_agents:
                 inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
                 t2no, t2nd, vis = self.predictor.get_predictions(np.array(inputs))
 
@@ -173,7 +173,8 @@ class CarSimulation(Environment):
             self.plot_segment_frame(centers,(t_l,t_r,b_l,b_r))
 
             ### Plotting of global ssta paths after calculation
-            if self.debugging and  len(self.ssta_car_pos)>0:self.plot_global_path_ssta(global_paths)
+            if self.debugging and  len(self.ssta_car_pos)>0:
+                self.plot_global_path_ssta(global_paths)
 
         
             #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

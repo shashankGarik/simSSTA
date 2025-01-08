@@ -237,8 +237,11 @@ class Environment():
         """
         for pt in global_agent_paths:
                 if  pt is not None:
-                    for point_set in pt:
+                    for idx, point_set in enumerate(pt):
                             if point_set[0] is not None:
+                                if idx < len(pt)-1:
+                                    p1,p2 = pt[idx], pt[idx+1]
+                                    pygame.draw.line(self.screen, self.colors[color], (p1[0], p1[1]), (p2[0], p2[1]), 2)
                                 pygame.draw.circle(self.screen, self.colors[color], (point_set[0], point_set[1]), 3)
 
 

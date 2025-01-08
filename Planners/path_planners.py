@@ -48,10 +48,19 @@ class Planners():
                     return self.path
         
         return self.path
- 
+
+    def straigh_path_w_noise(self,curr_global_pnts, global_frame_goal_pnts, segment_numbers, global_paths, ssta_boxes, num_points=3):
+        n_agents = len(curr_global_pnts)
+        updated_paths = list(global_paths)  # Copy to avoid modifying the input directly
+        for i in range(n_agents):
+            # Skip computation if a global path already exists or if no segment is assigned
+            if updated_paths[i] is not None or segment_numbers[i] is None:
+                continue
 
 
-    def compute_global_paths(self,curr_global_pnts, global_frame_goal_pnts, segment_numbers, global_paths, ssta_boxes, num_points=10):
+        return updated_paths
+
+    def compute_global_paths(self,curr_global_pnts, global_frame_goal_pnts, segment_numbers, global_paths, ssta_boxes, num_points=3):
         """
         Compute global paths for agents based on their current and goal positions,
         segment assignments, and segment-specific boxes.
