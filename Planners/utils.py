@@ -17,7 +17,6 @@ class PriorityQueue:
         out = heapq.heappop(self.elements)
         return out[2],out[0]
     
-
 def manhattan_dist(p1,p2):
     x1, y1 = p1
     x2, y2 = p2
@@ -27,4 +26,13 @@ def euclidean_dist(p1,p2):
     x1, y1 = p1
     x2, y2 = p2
     return ((x1 - x2)**2 + (y1 - y2)**2)**0.5
+
+
+
+
+
+
+
+
+
 

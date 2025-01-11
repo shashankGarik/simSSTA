@@ -34,7 +34,7 @@ class CarSimulation(Environment):
         self.display_realistic=args.display_realistic
         
         #running the model and visualising the T2NO results
-        if self.do_inference:
+        if self.do_inference or self.save_data:
             self.predictor = SSTA_predictor(args)
             if self.save_inference_video:
                 self.inference_saver = cv2.VideoWriter('inference.avi',  cv2.VideoWriter_fourcc(*'MJPG'), 60, (520, 390)) 
@@ -108,7 +108,7 @@ class CarSimulation(Environment):
             if self.do_inference and self.enable_ssta_agents:
                 inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
                 t2no, t2nd, vis = self.predictor.get_predictions(np.array(inputs))
-
+                # print(np.max(t2no), np.max(t2nd))
 
                 if self.save_inference_video and self.inference_duration[0] < self.timer and self.inference_duration[1] >= self.timer:
                     print(f"Saving {self.timer}")
@@ -196,7 +196,7 @@ class CarSimulation(Environment):
                 #getting the agents in the frame
                 # print(camera_x_local,len(camera_x_local))
                 #saving camera1 dataset
-                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 10000, 4000, 1000, 50)#side_length,square dimensions,timer,train,test,val,gap(buffer)
+                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 1000, 0, 0, t2no, t2nd, 500)#side_length,square dimensions,timer,train,test,val,gap(buffer)
                 # saving camera csv file (TO DOOOOOOO)
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
             if self.save_video and self.duration[0] < self.timer and self.duration[1] >= self.timer:

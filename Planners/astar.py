@@ -1,8 +1,68 @@
 from Planners.utils import *
+from Planners.occupancy import OccupancyHelper
 import numpy as np
 import cv2
 
-class Astar_T2nod:
+class Astar_T2nod_agentic:
+    def __init__(self, t2no, t2nd, r = 15, g_f = 3, max_time_step = 50):
+        """
+        args
+        - t2no
+        - t2nd
+        - r: radius of the agent
+        - g_f: grid factor used in combination with the radius to determine grid size
+        """
+        self.occupancy = OccupancyHelper(t2no, t2nd, r, g_f, max_time_step)
+
+    def is_terminal(self, state, goal):
+        """
+        checks if state is terminal
+        """
+        # if  (goal[0] - self.w < state[0] < goal[0] + self.w) and (goal[1] - self.w < state[1] < goal[1] + self.w):
+        #     return True
+        if state == goal:
+            return True
+        return False
+    
+    def run_search(self, start, goal, heuristic = manhattan_dist):
+        frontier = PriorityQueue()
+        visited = set()
+
+        frontier.insert((start,[start],0,0),0) #(start_state, path, cost, time_step), priority
+
+        while frontier.elements:
+            # print(frontier.elements)
+            (curr_state, curr_path, cost, t), _ = frontier.pop()
+
+            if curr_state not in visited:
+                if self.is_terminal(curr_state, goal): 
+                    path = curr_path.copy()
+                    return path
+                
+                visited.add(curr_state)
+                neighbors = self.occupancy.get_grid_neighbors(curr_state)
+                # print(neighbors)
+                for n in neighbors:
+                    temp_path = curr_path.copy()
+                    temp_path.append(n)
+
+                    state_cost = self.occupancy.get_state_cost(n)
+                    # print(state_cost)
+                    heuristic_cost = heuristic(n, goal)
+
+                    if n not in visited:
+                        frontier.insert((n,temp_path, state_cost, t),state_cost + heuristic_cost)
+
+                self.occupancy.iterate()
+        return None
+
+
+
+
+
+            
+
+class Astar_T2nod_general:
     def __init__(self, t2no, t2nd, max_time_step = 50, d = 5):
         self.t2no = t2no
         self.t2nd = t2nd
@@ -21,9 +81,7 @@ class Astar_T2nod:
         elif self.t2no[neighbor[0],neighbor[1]]-t == self.max_time_step-t:
             cost = 0
         else:
-            cost = 1/(self.t2no[neighbor[0],neighbor[1]]-t)
-
-        # print(cost)
+            cost = 1/(self.t2no[neighbor[0],neighbor[1]]-t)    
 
         return cost
 
@@ -102,8 +160,9 @@ class Astar_T2nod:
 # if __name__ == '__main__':
     
 #     ## sample implementation
-#     t2no_path = 'C:/Users/shash/OneDrive/Desktop/SSTA_2/simSSTA/dataset/train/_MOG_t2no_120/camera_0/t2no_00002075.png'
-#     t2nd_path = 'C:/Users/shash/OneDrive/Desktop/SSTA_2/simSSTA/dataset/train/_MOG_t2no_120/camera_0/t2nd_00002075.png'
+#     t2no_path = "/home/sgarikipati7/packages/simSSTA/dataset/train/_MOG_t2no_50/camera_0/t2no_00001662.png"
+
+#     t2nd_path = "/home/sgarikipati7/packages/simSSTA/dataset/train/_MOG_t2no_50/camera_0/t2nd_00001662.png"
     
 #     t2no = cv2.imread(t2no_path, cv2.IMREAD_GRAYSCALE)
 #     t2nd = cv2.imread(t2nd_path, cv2.IMREAD_GRAYSCALE)

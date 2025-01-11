@@ -416,7 +416,7 @@ class Environment():
 
 
     #save camera images
-    def save_camera_image(self, frame_sizes ,frame_corners, index, train_len, val_len, test_len, buffer = 500):
+    def save_camera_image(self, frame_sizes ,frame_corners, index, train_len, val_len, test_len, t2no, t2nd, buffer = 500):
 
         train_buffer = buffer
         val_buffer = buffer + train_buffer + train_len
@@ -443,9 +443,16 @@ class Environment():
             # branched_path = self.main_path + data_type
             branched_path = os.path.join(self.main_path, data_type)
             for idx in range(len(frame_sizes)): #iterating for each box
-                path = branched_path + "/camera_" + str(idx) 
-                if not os.path.exists(path):
-                    os.makedirs(path)
+                path_images = branched_path + "/camera_" + str(idx) +"/images"
+                path_t2no = branched_path + "/camera_" + str(idx) +"/t2no"
+                path_t2nd = branched_path + "/camera_" + str(idx) +"/t2nd"
+
+                if not os.path.exists(path_images):
+                    os.makedirs(path_images)
+                if not os.path.exists(path_t2no):
+                    os.makedirs(path_t2no)
+                if not os.path.exists(path_t2nd):
+                    os.makedirs(path_t2nd)
         
         if index >= buffer and data_type != None:
             
@@ -456,10 +463,21 @@ class Environment():
             outputs = self.get_frame(frame_sizes ,frame_corners)
             
             for idx in range(len(frame_sizes)): #iterating for each box
-                save_image_name = branched_path + "/camera_" + str(idx)  + "/image_" + str(index) + ".jpg"
+                save_image_name = branched_path + "/camera_" + str(idx)  + "/images" + "/image_" + str(index) + ".png"
+                save_t2no_name = branched_path + "/camera_" + str(idx)  + "/t2no" + "/image_" + str(index) + ".png"
+                save_t2nd_name = branched_path + "/camera_" + str(idx)  + "/t2nd" + "/image_" + str(index) + ".png"
+
                 output = outputs[idx]
+                print(np.max(t2no))
+                output_t2no = t2no[idx]
+                output_t2nd = t2nd[idx]
+
                 if not cv2.imwrite(save_image_name, output):
                     raise Exception("Could not write image")
+                if not cv2.imwrite(save_t2no_name, output_t2no):
+                    raise Exception("Could not write t2no")
+                if not cv2.imwrite(save_t2nd_name, output_t2nd):
+                    raise Exception("Could not write t2nd")
             
 
     #save camera data in csv file

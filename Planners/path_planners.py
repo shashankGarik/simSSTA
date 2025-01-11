@@ -5,6 +5,7 @@ from Planners.astar import *
 from Planners.utils import *
 import os
 import cv2
+from multiprocessing import Pool
 
 class Planners():
     def __init__(self,path_size,replanning_index):
