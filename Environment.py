@@ -76,10 +76,9 @@ class Environment():
     def segment_frame(self, boxes):
         """
         This function below segments the frame to smaller portions with specific angle
-
+        
         Parameters:
         - boxes: numpy array with angle, center_x, center_y, box_width/height (vectorized)
-
         """
 
         f_angle = boxes[:,0]

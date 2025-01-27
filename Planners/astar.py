@@ -13,7 +13,7 @@ class Astar_T2nod_agentic:
         - g_f: grid factor used in combination with the radius to determine grid size
         """
         self.occupancy = OccupancyHelper(t2no, t2nd, r, g_f, max_time_step)
-
+        
     def is_terminal(self, state, goal):
         """
         checks if state is terminal
@@ -23,44 +23,56 @@ class Astar_T2nod_agentic:
         if state == goal:
             return True
         return False
+
+    def scale_points(self, points, dir = "in"):
+        """
+        scale in or out based on t2no scaling
+        """
+        points = np.array(points)
+
+        if dir == "in":
+            points = points//self.occupancy.scale
+        elif dir == "out":
+            points = points*self.occupancy.scale
+        else: raise AttributeError("define scaling properly")
+
+        return points.tolist()
+
     
     def run_search(self, start, goal, heuristic = manhattan_dist):
+        print(start, goal)
+
+        start, goal = self.scale_points([start, goal], dir = "in")
+        start, goal = tuple(start), tuple(goal)
+        
         frontier = PriorityQueue()
         visited = set()
 
         frontier.insert((start,[start],0,0),0) #(start_state, path, cost, time_step), priority
 
         while frontier.elements:
-            # print(frontier.elements)
             (curr_state, curr_path, cost, t), _ = frontier.pop()
 
             if curr_state not in visited:
                 if self.is_terminal(curr_state, goal): 
                     path = curr_path.copy()
+                    path = self.scale_points(path, dir = "out")
                     return path
                 
                 visited.add(curr_state)
                 neighbors = self.occupancy.get_grid_neighbors(curr_state)
-                # print(neighbors)
                 for n in neighbors:
                     temp_path = curr_path.copy()
                     temp_path.append(n)
 
-                    state_cost = self.occupancy.get_state_cost(n)
-                    # print(state_cost)
-                    heuristic_cost = heuristic(n, goal)
+                    state_cost = np.round(cost + self.occupancy.get_state_cost(n),4)
+                    heuristic_cost = np.round(heuristic(n, goal), 3)
 
                     if n not in visited:
-                        frontier.insert((n,temp_path, state_cost, t),state_cost + heuristic_cost)
+                        frontier.insert((n,temp_path, state_cost, t+1),state_cost + heuristic_cost)
 
                 self.occupancy.iterate()
-        return None
-
-
-
-
-
-            
+        return None            
 
 class Astar_T2nod_general:
     def __init__(self, t2no, t2nd, max_time_step = 50, d = 5):

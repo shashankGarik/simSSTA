@@ -14,41 +14,32 @@ class Planners():
         self.path_size=path_size
         self.path=[np.full((path_size,2),-1)]
       
-        ######Yet to complete                    ######Yet to complete                    ######Yet to complete
-    def a_star(self,ssta_agents_goal_poses,time_step,ssta_path_indices, t2no, t2nd):
-        ######Yet to complete                    ######Yet to complete                    ######Yet to complete
-        
-        ssta_agents_start_poses=ssta_agents_goal_poses[:,4:6]
-        # print(ssta_agents_goal_poses)
-        # print(ssta_agents_start_poses)
+    def a_star(self,curr_poses, goal_poses, box_num, global_paths, t2no, t2nd, max_timestep):
+        n_agents = len(curr_poses)
+        updated_paths = list(global_paths)
 
-        # return as view,n,m,2 - this is as a list
-        
-        for idx, each in enumerate(ssta_agents_goal_poses):
-            
-            if each[-1] == None :
+        for i in range(n_agents):
+            if updated_paths[i] is not None or box_num[i] is None:
                 continue
-            elif  ssta_path_indices[0]==self.replanning_index or self.path[0][0][0]==-1:
-                # count = str(time_step+1)
-                # count_filled = count.zfill(8)
-                # t2no_path = os.path.join(r'C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/train/_MOG_t2no_50','camera_'+str(each[-1]),'t2no_' + count_filled + '.png')
-                # t2nd_path = os.path.join(r'C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/train/_MOG_t2no_50','camera_'+str(each[-1]),'t2nd_' + count_filled + '.png')
-                # t2no = cv2.imread(t2no_path, cv2.IMREAD_GRAYSCALE)
-                # t2nd = cv2.imread(t2nd_path, cv2.IMREAD_GRAYSCALE)
-                check = Astar_T2nod(t2no[each[-1]].T, t2nd[each[-1]].T)
-                start = tuple(np.int16(each[4:6]*(128/300)))
-                goal = tuple(np.int16(each[2:4]*(128/300)))
-                print(start, goal, each[-1])
-                path = check.run_search(start,goal, euclidean_dist)
-                if path is not None:
-                    # print(path, each[-1])
-                    # print(np.array(path))
-                    self.path=(np.array([(path[:self.path_size])])/128)*300
-                    # print(self.path)
-                    print("inside",self.path)
-                    return self.path
-        
-        return self.path
+            
+            segment_idx = box_num[i]
+
+            # Ensure the segment index is valid
+            if not (0 <= segment_idx < len(box_num)):
+                updated_paths[i] = None
+                continue
+
+            t2no, t2nd = t2no[box_num[i]], t2nd[box_num[i]]
+
+            check = Astar_T2nod_agentic(t2no, t2nd, r=1,g_f=1, max_time_step=max_timestep)
+
+            start, goal = curr_poses[i], goal_poses[i]
+            print(check.run_search(start, goal))
+
+            updated_paths[i] = check.run_search(start, goal)
+
+        return updated_paths
+
 
     def straigh_path_w_noise(self,curr_global_pnts, global_frame_goal_pnts, segment_numbers, global_paths, ssta_boxes, num_points=20):
         """

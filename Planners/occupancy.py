@@ -10,9 +10,12 @@ class OccupancyHelper:
         - g_f: grid factor used in combination with the radius to determine grid size
         - t_max_occ: max occupancy duration tracked by t2no or t2nd
         """
+        self.scale = 1  # init the scaling to gridify
         self.t2no, self.t2nd = self.gridify(t2no, t2nd, r//g_f)
         self.t_max_occupancy = t_max_occ
-        self.cost_map = np.round(1/(self.t2no),3)
+        with np.errstate(divide='ignore'):
+            self.cost_map = np.round(1/(self.t2no),3)
+        
 
     def gridify(self, t2no, t2nd, grid_size):
         """
@@ -33,6 +36,8 @@ class OccupancyHelper:
 
         pooled_t2no = np.min(reshaped_t2no, axis=(1, 3))
         pooled_t2nd = np.max(reshaped_t2nd, axis=(1, 3))
+        
+        self.scale = t2no.shape[0]//pooled_t2no.shape[0]
 
         return pooled_t2no, pooled_t2nd
     
@@ -50,7 +55,8 @@ class OccupancyHelper:
         self.t2nd[self.t2nd > 0] -= 1
 
         self.t2no[self.t2nd == 0] == self.t_max_occupancy
-        self.cost_map = np.round(1/self.t2no,3)
+        with np.errstate(divide='ignore'):
+            self.cost_map = np.round(1/self.t2no,3)
     
     def get_state_cost(self, state):
         return self.cost_map[state[0], state[1]]

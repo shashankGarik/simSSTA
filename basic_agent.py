@@ -32,6 +32,7 @@ class CarSimulation(Environment):
         self.display_mertic=args.display_metric
         self.do_inference = args.do_inference
         self.display_realistic=args.display_realistic
+        self.memory_length = args.threshold_time_step_gt
         
         #running the model and visualising the T2NO results
         if self.do_inference or self.save_data:
@@ -105,7 +106,7 @@ class CarSimulation(Environment):
 
             
             ##################### get predictions and visualise#######################
-            if self.do_inference and self.enable_ssta_agents:
+            if self.do_inference or self.enable_ssta_agents:
                 inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
                 t2no, t2nd, vis = self.predictor.get_predictions(np.array(inputs))
                 # print(np.max(t2no), np.max(t2nd))
@@ -149,10 +150,16 @@ class CarSimulation(Environment):
                     #function is not yet complete this will be the ultimate paths
                     ######Yet to complete #################
                     #determine whether astar will return local or global path
-                    local_paths=self.path_planner.a_star(self.apf_ssta_agents.ssta_goal_pos, self.timer, self.ssta_path_indices, t2no, t2nd)
-                    self.apf_ssta_agents.ssta_control.global_agent_paths=self.transform_local_to_global_path_vectorized(local_paths,camera_points_indices,t_l,self.frame_angle,n=len(self.ssta_goal_pos),k=self.path_size)
+                    local_curr_pos  = self.apf_ssta_agents.ssta_goal_pos[:,4:6]
+                    local_goal_pos = self.apf_ssta_agents.ssta_goal_pos[:,2:4]
+                    box_idx         = self.apf_ssta_agents.ssta_goal_pos[:,8]
+                    global_paths=self.apf_ssta_agents.ssta_goal_pos[:,9]
+
+                    # local_paths = self.path_planner.a_star(local_curr_pos, local_goal_pos, box_idx, global_paths, t2no, t2nd, self.memory_length)          
+                    # self.apf_ssta_agents.ssta_control.global_agent_paths=self.transform_local_to_global_path_vectorized(local_paths,camera_points_indices,t_l,self.frame_angle,n=len(self.ssta_goal_pos),k=self.path_size)
 
                 if args.manual_path_plan_ssta:
+                    #[curr_x, curr_y, vel_x, vel_y, _, _, goal_x, goal_y, box_num]
                     ###This calculates and gives the global path directly
                     curr_global_pnts=self.apf_ssta_agents.ssta_car_pos[:,0:2]
                     global_frame_goal_pnts=self.apf_ssta_agents.ssta_goal_pos[:,6:8]
