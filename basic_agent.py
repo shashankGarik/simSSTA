@@ -11,7 +11,20 @@ from predict import *
 from config import args
 import sys
 import cv2
+import torch
+import torch
+# print(torch.__version__)
+# print(torch.version.cuda)  # Should return a version number, not None
+# print(torch.backends.cudnn.version())  # Should return a number, not None
 
+# print(torch.cuda.is_available())
+# print(torch.cuda.device_count())
+# print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No GPU available")
+
+
+
+###REPLANNING - 10 POINTS EVERY TSECONDS REPLANNING MUST BE DONE AND FUNCTION CALLED FOR UPDATE, PATH NUMBER DOESNT NEED TO CHANGE,VARIABEL PATH LENGTH ,
+#TIME BASED varied path replanning call that function
 
 ###########    Solved -----Core Problem2 :: None case for both apf and ssta agents   , code breaks if either one of the agent becomes None   ###### 
 
@@ -56,13 +69,14 @@ class CarSimulation(Environment):
         self.apf_ssta_agents=APFSSTAAgents(obstacle_vec,DoubleIntegratorAPF,DoubleIntegratorSSTA,self.frame_rate,self.infinity,self.reset_index_global_path_number_ssta)
         self.apf_ssta_agents.enable_ssta_agents=self.enable_ssta_agents
 
-        ###to be completed
-        self.path_size=21
-        self.replanning_index=5
-        self.path_planner=Planners(self.path_size,self.replanning_index)
+
         ###
-        self.apf_ssta_agents.ssta_control.path_size=self.path_size
-        self.apf_ssta_agents.ssta_control.replanning_index=self.replanning_index
+        # self.apf_ssta_agents.ssta_control.path_size=self.path_size
+        self.replanning_time_interval=args.replanning_time_interval
+        # self.apf_ssta_agents.ssta_control.replanning_index=self.replanning_index
+
+        ###to be completed
+        self.path_planner=Planners(self.replanning_time_interval)
 
         
         self.timer=0
@@ -78,6 +92,7 @@ class CarSimulation(Environment):
         # Main simulation loop
         running = True
         while running:
+
             #checks if window is closed and closes the loop by setting False
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -88,7 +103,6 @@ class CarSimulation(Environment):
             self.apf_car_pos,self.apf_goal_pos =  self.apf_ssta_agents.generate_apf_agents()
             if self.enable_ssta_agents:
                 self.ssta_car_pos,self.ssta_goal_pos = self.apf_ssta_agents.generate_ssta_agents()
-
             #concatenating apf and ssta agents
             if self.enable_ssta_agents:
                 self.car_pos=np.vstack([self.apf_car_pos,self.ssta_car_pos])
@@ -103,10 +117,12 @@ class CarSimulation(Environment):
 
             # setting the number of views/segment
             self.frame_angle,centers,(t_l,t_r,b_l,b_r)=self.segment_frame(self.ssta_boxes)
+            ##############################
+            ####       TO REMEMBER: ssta AGENTS NEED t2NO/D FOR PLANNING
+            ##############################
 
-            
             ##################### get predictions and visualise#######################
-            if self.do_inference or self.enable_ssta_agents:
+            if self.do_inference :
                 inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
                 t2no, t2nd, vis = self.predictor.get_predictions(np.array(inputs))
                 # print(np.max(t2no), np.max(t2nd))
@@ -122,7 +138,7 @@ class CarSimulation(Environment):
                         quit()
 
             ############################################
-           
+            # print(self.apf_ssta_agents.ssta_goal_pos)
             #intersection for visualisation
             if self.enable_ssta_agents and len(self.ssta_car_pos)>0:
                 self.intersections_apf=self.apf_ssta_agents.apf_control.intersection()
@@ -165,15 +181,26 @@ class CarSimulation(Environment):
                     global_frame_goal_pnts=self.apf_ssta_agents.ssta_goal_pos[:,6:8]
                     segment_numbers=self.apf_ssta_agents.ssta_goal_pos[:,8]
                     global_paths=self.apf_ssta_agents.ssta_goal_pos[:,9]
+                    path_indices=self.apf_ssta_agents.ssta_goal_pos[:,10]
+                    global_start_times=self.apf_ssta_agents.ssta_goal_pos[:,11]
+                    global_timer=self.timer/args.frame_rate #converting to seconds
 
-                    global_paths=self.path_planner.straigh_path_w_noise(curr_global_pnts,global_frame_goal_pnts,segment_numbers,global_paths,self.ssta_boxes,self.reset_index_global_path_number_ssta)
+                    # global_paths=self.path_planner.compute_global_paths(curr_global_pnts,global_frame_goal_pnts,segment_numbers,global_paths,self.ssta_boxes,self.reset_index_global_path_number_ssta)
+                    
+                    global_paths,path_indices,global_start_times=self.path_planner.compute_glbl_pth_rndm_lngth(curr_global_pnts,global_frame_goal_pnts,segment_numbers,global_paths,self.ssta_boxes,path_indices,global_start_times,global_timer)
+                
+                    ##need to do apth index here also now since replanning ##TO DO ####
                     self.apf_ssta_agents.ssta_goal_pos[:,9]=global_paths
+                    self.apf_ssta_agents.ssta_goal_pos[:,10]=path_indices
+                    self.apf_ssta_agents.ssta_goal_pos[:,11]=global_start_times
 
             else:
                 #without SSTA
                 self.intersections=self.apf_ssta_agents.apf_control.intersection()
                 self.colllison_apf_ssta=self.apf_ssta_agents.apf_control.agent_collision
 
+            
+            # print(self.apf_ssta_agents.ssta_goal_pos)
             self.draw_map() # draws map with obstacles 
             self.draw_agents_with_goals(self.colllison_apf_ssta) # draws agents and their respective goal positions
             # plotting the segment
@@ -183,7 +210,7 @@ class CarSimulation(Environment):
             if self.debugging and  len(self.ssta_car_pos)>0:
                 self.plot_global_path_ssta(global_paths)
 
-        
+
             #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
             ##########METRICS############################
             if self.timer%50==0:
@@ -203,7 +230,7 @@ class CarSimulation(Environment):
                 #getting the agents in the frame
                 # print(camera_x_local,len(camera_x_local))
                 #saving camera1 dataset
-                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 1000, 0, 0, t2no, t2nd, 500)#side_length,square dimensions,timer,train,test,val,gap(buffer)
+                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 1000, 0, 0, t2no, t2nd, 250)#side_length,square dimensions,timer,train,test,val,gap(buffer)
                 # saving camera csv file (TO DOOOOOOO)
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
             if self.save_video and self.duration[0] < self.timer and self.duration[1] >= self.timer:
@@ -223,6 +250,7 @@ class CarSimulation(Environment):
             pygame.display.update()
             self.clock.tick(self.frame_rate)
             self.timer+=1
+
         pygame.quit()
 
 if __name__ == "__main__":

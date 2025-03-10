@@ -142,7 +142,7 @@ class SSTA_predictor:
         for i in range(n):
             ssta_name = 'ssta_' + str(i)
             path = os.path.join(weights_dir, ssta_name+'.pt')
-            models[ssta_name] = torch.load(path)
+            models[ssta_name] = torch.load(path,weights_only=False)
             models[ssta_name] = models[ssta_name].to(self.args.device)
             print("Loaded cv2.cvtColor(inputs,cv2.COLOR_RGB2GRAY)model: ", ssta_name)
 
@@ -154,7 +154,7 @@ class SSTA_predictor:
     def load_vae(self, file_name):
         vae_path = os.path.join(self.args.vae_ckpt_dir, file_name)
         print(vae_path)
-        vae = torch.load(vae_path)
+        vae = torch.load(vae_path, weights_only=False)
         vae = vae.to(self.args.device)
         print("Loaded model: ", 'vae')
 

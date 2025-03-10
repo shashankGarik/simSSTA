@@ -158,10 +158,10 @@ class DoubleIntegratorSSTA:
         #### hint solved: play with these two self.ssta_agents and self.ssta_agents_goal_pos To modifyyy:self.ssta_agents_goal_pos
         ### Core Problem 1: It moves one index only if all reach the index point- Solved....
         self.ssta_path_indices=self.ssta_agents_goal_pos[:,10]
-        reset_number=self.global_path_points_inbetween
-        reset_path_indices=np.argwhere(self.ssta_path_indices==reset_number)
+        # reset_number=self.global_path_points_inbetween
+        # reset_path_indices=np.argwhere(self.ssta_path_indices==reset_number)
         reset_path_indices2=np.argwhere(self.ssta_path_indices==None)
-        self.ssta_agents_goal_pos[reset_path_indices,10]=0
+        # self.ssta_agents_goal_pos[reset_path_indices,10]=0
         self.ssta_agents_goal_pos[reset_path_indices2,10]=0
         self.ssta_path_indices = np.array(self.ssta_path_indices, dtype=int)
 

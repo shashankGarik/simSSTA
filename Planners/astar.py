@@ -70,9 +70,9 @@ class Astar_T2nod_agentic:
 
                     if n not in visited:
                         frontier.insert((n,temp_path, state_cost, t+1),state_cost + heuristic_cost)
-
                 self.occupancy.iterate()
         return None            
+
 
 class Astar_T2nod_general:
     def __init__(self, t2no, t2nd, max_time_step = 50, d = 5):

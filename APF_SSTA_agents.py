@@ -18,7 +18,7 @@ class APFSSTAAgents():
         # self.ssta_goal_pos = np.array([[1000, 150,None,None,None,None,None,None,None,None,None],[1000, 250,None,None,None,None,None,None,None,None,None]]) # globalgx,globalgy,goalviewlocalgx,goalviewlocalgy,currlocalviewx,currlocalviewy,global_frame_goalx,global_frame_goaly,view/segment,globalpath,path_index
 
         self.ssta_car_pos = np.array([[-10.0, 100.0, 0.0, 0.0,6, 15, -1]])# startx,starty,vx,vy,colour,radius,shape(agent)
-        self.ssta_goal_pos = np.array([[1000, 150,None,None,None,None,None,None,None,None,None]]) # globalgx,globalgy,goalviewlocalgx,goalviewlocalgy,currlocalviewx,currlocalviewy,global_frame_goalx,global_frame_goaly,view/segment,globalpath,path_index
+        self.ssta_goal_pos = np.array([[1000, 150, None, None, None, None, None, None, None, None, None, None]],dtype=object)# globalgx,globalgy,goalviewlocalgx,goalviewlocalgy,currlocalviewx,currlocalviewy,global_frame_goalx,global_frame_goaly,view/segment,globalpath,path_index,[starttime]replanning_running_time
         
 
         self.infinity = infinity
@@ -40,6 +40,7 @@ class APFSSTAAgents():
             self.car_pos=np.vstack([self.apf_car_pos,self.ssta_car_pos])
             self.goal_pos=np.vstack([self.apf_goal_pos,self.ssta_goal_pos[:,:2]])
             new_agents=self.infinity.run_simulation(self.car_pos,(self.goal_pos[:,:2]).astype(np.int32))# important that goal points passed in must be global and of int 32
+            
 
             ###This function splits the new generated points as ssta and apf based on percentage
             apf_new_agents,ssta_new_agents=self.split_agents(new_agents)
