@@ -21,15 +21,15 @@ parser.add_argument('--message_type', type=str, default='raw_data', help='normal
 
 ######################## inference/training/visualization params ########################
 parser.add_argument('--threshold_time_step_gt', type=int, default=100,help="timestep of t2no/t2nd")
-parser.add_argument('--threshold_time_step_pd', type=int, default=50,help="timestep of t2no/t2nd")
-parser.add_argument('--vis_T2NO_D', type = bool, default = True, help='visualize results or not')
-parser.add_argument('--do_inference', type = bool, default = False, help ="Predict T2no/d images or not")
+parser.add_argument('--threshold_time_step_pd', type=int, default=100,help="timestep of t2no/t2nd")
+parser.add_argument('--vis_T2NO_D', type = bool, default = False, help='visualize results or not')
+parser.add_argument('--do_inference', type = bool, default = True, help ="Predict T2no/d images or not")
 parser.add_argument('--lifelong_learning', type = bool, default = False, help ="Training ssta agents on live data or not")
 parser.add_argument('--t2n_cmap', type = str, default = 'viridis', help ="viridis/gray")
 
 ######################## Simulation environment params ########################
   ############# Flags ########################
-parser.add_argument('--save_data', type = bool, default = False, help ="Saves the  input frames and t2no/d images  or not")
+parser.add_argument('--save_data', type = bool, default = True, help ="Saves the  input frames and t2no/d images  or not")
 parser.add_argument('--save_video', type = bool, default = False, help ="Saves the video of the SSTA")
 parser.add_argument('--save_inference', type = bool, default = False, help ="Saves the video of the SSTA")
 parser.add_argument('--video_duration', type = int, nargs= '+',default = (250,500), help = "(start_frame, end_frame)")

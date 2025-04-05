@@ -124,7 +124,7 @@ class CarSimulation(Environment):
             ##################### get predictions and visualise#######################
             if self.do_inference :
                 inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
-                t2no, t2nd, vis = self.predictor.get_predictions(np.array(inputs))
+                t2no, t2nd, vis, past_input = self.predictor.get_predictions(np.array(inputs))
                 # print(np.max(t2no), np.max(t2nd))
 
                 if self.save_inference_video and self.inference_duration[0] < self.timer and self.inference_duration[1] >= self.timer:
@@ -230,7 +230,7 @@ class CarSimulation(Environment):
                 #getting the agents in the frame
                 # print(camera_x_local,len(camera_x_local))
                 #saving camera1 dataset
-                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 1000, 0, 0, t2no, t2nd, 250)#side_length,square dimensions,timer,train,test,val,gap(buffer)
+                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 1000, 0, 0, t2no, t2nd, past_input,  500)#side_length,square dimensions,timer,train,test,val,gap(buffer)
                 # saving camera csv file (TO DOOOOOOO)
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
             if self.save_video and self.duration[0] < self.timer and self.duration[1] >= self.timer:

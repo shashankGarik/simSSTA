@@ -2,9 +2,10 @@ from Planners.utils import *
 from Planners.occupancy import OccupancyHelper
 import numpy as np
 import cv2
+from Planners.localize import adust_local_t2nod
 
 class Astar_T2nod_agentic:
-    def __init__(self, t2no, t2nd, r = 15, g_f = 3, max_time_step = 50):
+    def __init__(self, curr_pos, t2no, t2nd, r = 15, g_f = 3, max_time_step = 50):
         """
         args
         - t2no
@@ -12,6 +13,8 @@ class Astar_T2nod_agentic:
         - r: radius of the agent
         - g_f: grid factor used in combination with the radius to determine grid size
         """
+        self.curr_pos = curr_pos
+        t2no, t2nd = adust_local_t2nod(curr_pos, t2no, t2nd, max_time_step)
         self.occupancy = OccupancyHelper(t2no, t2nd, r, g_f, max_time_step)
         
     def is_terminal(self, state, goal):
@@ -37,10 +40,10 @@ class Astar_T2nod_agentic:
         else: raise AttributeError("define scaling properly")
 
         return points.tolist()
-
     
-    def run_search(self, start, goal, heuristic = manhattan_dist):
-        print(start, goal)
+    
+    def run_search(self, goal, heuristic = manhattan_dist):
+        start = self.curr_pos
 
         start, goal = self.scale_points([start, goal], dir = "in")
         start, goal = tuple(start), tuple(goal)
@@ -70,9 +73,9 @@ class Astar_T2nod_agentic:
 
                     if n not in visited:
                         frontier.insert((n,temp_path, state_cost, t+1),state_cost + heuristic_cost)
+
                 self.occupancy.iterate()
         return None            
-
 
 class Astar_T2nod_general:
     def __init__(self, t2no, t2nd, max_time_step = 50, d = 5):

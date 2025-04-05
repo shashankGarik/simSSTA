@@ -57,6 +57,7 @@ class SSTA_predictor:
         self.memory = [None for _ in range(args.num_views)]
         self.q_E = queue.Queue(args.threshold_time_step_gt)
         self.q_E_t2nd = queue.Queue(args.threshold_time_step_gt)
+        self.q_inputs = queue.Queue(args.threshold_time_step_gt)
         self.B = np.ones((128,128))*255.0
         self.t2n_gt_time = args.threshold_time_step_gt
         self.t2n_pd_time = args.threshold_time_step_pd
@@ -74,11 +75,11 @@ class SSTA_predictor:
 
     def get_predictions(self, inputs):
         vis = None
-        # print(inputs.shape)
+        inputs_shape = inputs.shape
+        self.q_inputs.put(inputs)
         image = np.uint8(np.dot(inputs[...,:3], [0.200, 0.587, 0.114])) ## convert to grayscale
         
-        # t2no = self.compute_t2no(image)
-        # t2nd = self.compute_t2nd(image, t2no)
+
         t2no, t2nd = self.compute_t2nod(image)
       
         inputs = np.float32(inputs/255.00)
@@ -121,8 +122,14 @@ class SSTA_predictor:
 
         if self.vis:
             vis = self.visualize(outputs, inputs, t2no, t2nd)
+        
+        if not self.q_inputs.full():
+            print(len(self.q_inputs))
+            past_inputs = np.zeros(inputs_shape)
+        else:
+            past_inputs = self.q_inputs.get()
 
-        return t2no, t2nd, vis
+        return t2no, t2nd, vis, past_inputs
 
     def train(self, pred, gt):
         
@@ -302,14 +309,15 @@ class SSTA_predictor:
 
         outputs = np.hstack([border_v] + outputso + [border_v] + outputsd)
 
-        inputs =  [border_v]+inputs_arr
-        inputs = np.hstack(inputs*args.num_views)
+
+        inputs_vis =  [border_v]+inputs_arr
+        inputs_vis = np.hstack(inputs_vis*args.num_views)
 
         border_h = np.zeros((1,inputs.shape[1],3))
 
         t2ns = np.hstack([border_v] + t2nos + [border_v] + t2nds)
         
-        final = np.vstack([border_h, border_h, inputs, border_h,  t2ns, border_h, outputs, border_h, border_h])
+        final = np.vstack([border_h, border_h, inputs_vis, border_h,  t2ns, border_h, outputs, border_h, border_h])
         border_v2 = np.zeros((final.shape[0],1,3))
 
         final_final = np.hstack([border_v2, final, border_v2])

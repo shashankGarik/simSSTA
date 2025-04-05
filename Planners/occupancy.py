@@ -15,7 +15,7 @@ class OccupancyHelper:
         self.t_max_occupancy = t_max_occ
         with np.errstate(divide='ignore'):
             self.cost_map = np.round(1/(self.t2no),3)
-        
+
 
     def gridify(self, t2no, t2nd, grid_size):
         """
@@ -38,6 +38,7 @@ class OccupancyHelper:
         pooled_t2nd = np.max(reshaped_t2nd, axis=(1, 3))
         
         self.scale = t2no.shape[0]//pooled_t2no.shape[0]
+        print(self.scale)
 
         return pooled_t2no, pooled_t2nd
     
@@ -78,3 +79,6 @@ class OccupancyHelper:
                 neighbors.append((x_p,y_p))
             
         return neighbors
+
+    
+

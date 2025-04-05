@@ -76,7 +76,7 @@ class Environment():
     def segment_frame(self, boxes):
         """
         This function below segments the frame to smaller portions with specific angle
-        
+
         Parameters:
         - boxes: numpy array with angle, center_x, center_y, box_width/height (vectorized)
         """
@@ -91,8 +91,6 @@ class Environment():
         rotated_rectangle = self.rotate_points(np.array([[x_tl,y_tl],[xtr, ytr],[xbl, ybl],[xbr, ybr]]), f_angle, np.array([x_c,y_c]))
 
         t_l,t_r,b_l,b_r= rotated_rectangle[:,0],rotated_rectangle[:,1],rotated_rectangle[:,2],rotated_rectangle[:,3]
-
-
         return f_angle, np.array([x_c, y_c]), (t_l,t_r,b_l,b_r)
         
     
@@ -415,7 +413,7 @@ class Environment():
 
 
     #save camera images
-    def save_camera_image(self, frame_sizes ,frame_corners, index, train_len, val_len, test_len, t2no, t2nd, buffer = 500):
+    def save_camera_image(self, frame_sizes ,frame_corners, index, train_len, val_len, test_len, t2no, t2nd, past_input = None, buffer = 500):
 
         train_buffer = buffer
         val_buffer = buffer + train_buffer + train_len
@@ -459,17 +457,18 @@ class Environment():
             if index%100 == 0:
                 print("current image ("+data_type+"): ", index)
 
-            outputs = self.get_frame(frame_sizes ,frame_corners)
+            # outputs = self.get_frame(frame_sizes ,frame_corners)
             
             for idx in range(len(frame_sizes)): #iterating for each box
                 save_image_name = branched_path + "/camera_" + str(idx)  + "/images" + "/image_" + str(index) + ".png"
                 save_t2no_name = branched_path + "/camera_" + str(idx)  + "/t2no" + "/image_" + str(index) + ".png"
                 save_t2nd_name = branched_path + "/camera_" + str(idx)  + "/t2nd" + "/image_" + str(index) + ".png"
 
-                output = outputs[idx]
+                # output = outputs[idx]
                 print(np.max(t2no))
                 output_t2no = t2no[idx]
                 output_t2nd = t2nd[idx]
+                output = past_input[idx]
 
                 if not cv2.imwrite(save_image_name, output):
                     raise Exception("Could not write image")
