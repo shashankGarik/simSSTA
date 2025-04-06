@@ -8,11 +8,13 @@ from Environment import Environment
 from APF_SSTA_agents import *
 from Planners.path_planners import *
 from predict import *
-from config import args
+from config import args as config
 import sys
 import cv2
 import torch
 import torch
+import os
+import shutil
 # print(torch.__version__)
 # print(torch.version.cuda)  # Should return a version number, not None
 # print(torch.backends.cudnn.version())  # Should return a number, not None
@@ -29,14 +31,14 @@ import torch
 ###########    Solved -----Core Problem2 :: None case for both apf and ssta agents   , code breaks if either one of the agent becomes None   ###### 
 
 class CarSimulation(Environment):
-    def __init__(self, obstacle_vec):
-        super().__init__(args.window_height, args.window_width, obstacle_vec)
+    def __init__(self, args):
+        super().__init__(args.window_height, args.window_width, args.obstacles, args)
 
         # Initialize Pygame necessary for initialising the simulation window and graphics
         print('Initializing Agents')
         pygame.init()
         pygame.display.set_caption("Car Simulation")#Windows heading
-
+        self.args = args
         self.debugging = args.debugging
         self.save_data = args.save_data
         self.save_video = args.save_video
@@ -58,7 +60,7 @@ class CarSimulation(Environment):
             self.duration = tuple(args.video_duration)
 
         # Set up car and goal positions
-        self.obstacles = obstacle_vec
+        self.obstacles = args.obstacles
         self.clock = pygame.time.Clock()
         self.frame_rate= args.frame_rate
         self.infinity = LoopSimulation(args.window_height,args.window_width,100,args.seed)
@@ -66,7 +68,7 @@ class CarSimulation(Environment):
 
         self.reset_index_global_path_number_ssta=args.global_path_intermediate_points
 
-        self.apf_ssta_agents=APFSSTAAgents(obstacle_vec,DoubleIntegratorAPF,DoubleIntegratorSSTA,self.frame_rate,self.infinity,self.reset_index_global_path_number_ssta)
+        self.apf_ssta_agents=APFSSTAAgents(args.obstacles,DoubleIntegratorAPF,DoubleIntegratorSSTA,self.frame_rate,self.infinity,self.reset_index_global_path_number_ssta)
         self.apf_ssta_agents.enable_ssta_agents=self.enable_ssta_agents
 
 
@@ -86,6 +88,21 @@ class CarSimulation(Environment):
         # each side of box/view/segment 
         self.side_length = self.ssta_boxes[:,-1]
 
+        if self.save_data:
+            main_path = os.path.dirname(os.path.abspath(__file__))
+
+            # Define the potential dataset paths
+            i = 0
+            while os.path.exists(os.path.join(main_path, f"dataset_{str((i)).zfill(2)}")):
+                if self.args.remove_old_data:
+                    shutil.rmtree(os.path.join(main_path, f"dataset_{str((i)).zfill(2)}"))
+                i += 1
+            if self.args.remove_old_data:
+                self.save_dir = os.path.join(main_path, "dataset_00")
+            else:
+                self.save_dir = os.path.join(main_path, f"dataset_{str((i)).zfill(2)}")
+            os.mkdir(self.save_dir)
+            print(self.save_dir)
 
     def run_simulation(self):
         print('running')
@@ -124,7 +141,7 @@ class CarSimulation(Environment):
             ##################### get predictions and visualise#######################
             if self.do_inference :
                 inputs = self.get_frame(self.side_length,(t_l,t_r,b_l,b_r))
-                t2no, t2nd, vis, past_input = self.predictor.get_predictions(np.array(inputs))
+                t2no, t2nd, past_input = self.predictor.get_ground_truth(np.array(inputs))
                 # print(np.max(t2no), np.max(t2nd))
 
                 if self.save_inference_video and self.inference_duration[0] < self.timer and self.inference_duration[1] >= self.timer:
@@ -230,7 +247,7 @@ class CarSimulation(Environment):
                 #getting the agents in the frame
                 # print(camera_x_local,len(camera_x_local))
                 #saving camera1 dataset
-                self.save_camera_image(self.side_length,(t_l,t_r,b_l,b_r),self.timer, 1000, 0, 0, t2no, t2nd, past_input,  500)#side_length,square dimensions,timer,train,test,val,gap(buffer)
+                self.save_camera_image(self.save_dir, self.side_length,(t_l,t_r,b_l,b_r),self.timer, 1000, 0, 0, t2no, t2nd, past_input,  500)#side_length,square dimensions,timer,train,test,val,gap(buffer)
                 # saving camera csv file (TO DOOOOOOO)
                 # self.save_camera_data(self.timer,camera_x_local,camera_x_global)
             if self.save_video and self.duration[0] < self.timer and self.duration[1] >= self.timer:
@@ -254,5 +271,5 @@ class CarSimulation(Environment):
         pygame.quit()
 
 if __name__ == "__main__":
-    simulation = CarSimulation(args.obstacles)
+    simulation = CarSimulation(config)
     simulation.run_simulation()

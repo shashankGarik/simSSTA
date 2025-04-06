@@ -78,10 +78,11 @@ class Astar_T2nod_agentic:
         return None            
 
 class Astar_T2nod_general:
-    def __init__(self, t2no, t2nd, max_time_step = 50, d = 5):
+    def __init__(self, t2no, t2nd, args, max_time_step = 50, d = 5):
         self.t2no = t2no
         self.t2nd = t2nd
         self.max_time_step = max_time_step
+        self.args = args
         self.w = d # how many pixels each neighbor is apart
 
     def compute_cost(self, neighbor, t):
@@ -154,7 +155,7 @@ class Astar_T2nod_general:
                     return path
                 
                 visited.add(curr_state)
-                neighbors, cost_multiplier = self.get_neighbors(curr_state)
+                neighbors, cost_multiplier = self.get_neighbors(curr_state, self.args.img_width)
                 # print(neighbors)
                 for (n,c_m) in zip(neighbors, cost_multiplier):
                     temp_path = curr_path.copy()

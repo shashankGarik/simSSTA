@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser()
 
 ######################## SSTA model params ########################
 parser.add_argument('--filter_size', type=int, default=3)
-parser.add_argument('--img_width', type=int, default=128, help='img width')
+parser.add_argument('--img_width', type=int, default=256, help='img width')
 parser.add_argument('--img_channel', type=int, default=3, help='img channel')
 parser.add_argument('--num_hidden', type=str, default='32,32,32,64', help='64,64,64,64')
 parser.add_argument('--stride', type=int, default=1)
@@ -30,6 +30,7 @@ parser.add_argument('--t2n_cmap', type = str, default = 'viridis', help ="viridi
 ######################## Simulation environment params ########################
   ############# Flags ########################
 parser.add_argument('--save_data', type = bool, default = True, help ="Saves the  input frames and t2no/d images  or not")
+parser.add_argument('--remove_old_data', type=bool, default=True, help = "Deletes the old directory and files")
 parser.add_argument('--save_video', type = bool, default = False, help ="Saves the video of the SSTA")
 parser.add_argument('--save_inference', type = bool, default = False, help ="Saves the video of the SSTA")
 parser.add_argument('--video_duration', type = int, nargs= '+',default = (250,500), help = "(start_frame, end_frame)")

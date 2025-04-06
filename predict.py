@@ -58,7 +58,7 @@ class SSTA_predictor:
         self.q_E = queue.Queue(args.threshold_time_step_gt)
         self.q_E_t2nd = queue.Queue(args.threshold_time_step_gt)
         self.q_inputs = queue.Queue(args.threshold_time_step_gt)
-        self.B = np.ones((128,128))*255.0
+        self.B = np.ones((self.args.img_width,self.args.img_width))*255.0
         self.t2n_gt_time = args.threshold_time_step_gt
         self.t2n_pd_time = args.threshold_time_step_pd
 
@@ -74,13 +74,8 @@ class SSTA_predictor:
         self.loss = nn.MSELoss()
 
     def get_predictions(self, inputs):
-        vis = None
-        inputs_shape = inputs.shape
-        self.q_inputs.put(inputs)
-        image = np.uint8(np.dot(inputs[...,:3], [0.200, 0.587, 0.114])) ## convert to grayscale
-        
 
-        t2no, t2nd = self.compute_t2nod(image)
+        t2no, t2nd, = self.compute_t2nod(inputs)
       
         inputs = np.float32(inputs/255.00)
 
@@ -122,17 +117,24 @@ class SSTA_predictor:
 
         if self.vis:
             vis = self.visualize(outputs, inputs, t2no, t2nd)
-        
-        if not self.q_inputs.full():
-            print(len(self.q_inputs))
-            past_inputs = np.zeros(inputs_shape)
-        else:
-            past_inputs = self.q_inputs.get()
 
-        return t2no, t2nd, vis, past_inputs
+        return vis
+    
+
+    def get_ground_truth(self, inputs):
+        inputs_shape = inputs.shape
+        self.q_inputs.put(inputs)
+        
+        t2no, t2nd = self.compute_t2nod(inputs)
+
+        if not self.q_inputs.full():
+            inputs = np.zeros(inputs_shape)
+        else:
+            inputs = self.q_inputs.get()
+        return t2no, t2nd, inputs
+
 
     def train(self, pred, gt):
-        
 
         loss = self.loss(pred, gt)
         print('yse')
@@ -173,42 +175,9 @@ class SSTA_predictor:
         for ssta in relevant_connections:
             relevant_msgs.append(messages[ssta])
         return relevant_msgs
-    
-    def compute_t2no(self, frame):
-
-        diff_img_T = (np.abs(self.B[np.newaxis,:,:]-frame).astype(np.uint8) > 70) * 255.  # [False, True]
-        self.q_E.put(diff_img_T)
-
-        if not self.q_E.full():
-            
-            return np.array([np.ones((128,128))*self.t2n_gt_time]*self.args.num_views)
-
-        q_E_t2no_array = np.asarray(list(self.q_E.queue) + [np.ones_like(diff_img_T) * 255.])
-
-        t2no_img = np.argmax(q_E_t2no_array, axis=0)
-        self.q_E.get()
-
-        return t2no_img
-
-    def compute_t2nd(self, frame, t2no):
-        diff_img_t2nd_T = (np.abs(self.B[np.newaxis,:,:]-frame).astype(np.uint8) < 70) * 255. 
-        self.q_E_t2nd.put(diff_img_t2nd_T)
-
-        if not self.q_E_t2nd.full():
-            
-            return np.array([np.zeros((128,128))]*self.args.num_views)
-        
-        q_E_t2nd_array = np.asarray(list(self.q_E_t2nd.queue))
-
-        t2nd_img = np.argmax(q_E_t2nd_array, axis=0)
-        infty_mask = np.logical_or((np.abs(t2no - self.args.threshold_time_step_gt) < 1e-2), (np.abs(t2nd_img) < 1e-2))
-        t2nd_img[infty_mask] = self.args.threshold_time_step_gt
-
-        self.q_E_t2nd.get()
-
-        return t2nd_img
 
     def compute_t2nod(self, frame):
+        frame = np.uint8(np.dot(frame[...,:3], [0.200, 0.587, 0.114])) ## convert to grayscale
         
         diff_img_T = (np.abs(self.B[np.newaxis,:,:]-frame).astype(np.uint8) > 70) * 255.  # [False, True]
         self.q_E.put(diff_img_T)
@@ -216,7 +185,7 @@ class SSTA_predictor:
         data_stack = np.array(list(self.q_E.queue))
 
         if not self.q_E.full():
-            return np.array([np.ones((128,128))*self.t2n_gt_time]*self.args.num_views), np.array([np.zeros((128,128))]*self.args.num_views)
+            return np.array([np.ones((self.args.img_width,self.args.img_width))*self.t2n_gt_time]*self.args.num_views), np.array([np.zeros((self.args.img_width,self.args.img_width))]*self.args.num_views)
 
         q_E_t2no_array = np.asarray(list(self.q_E.queue) + [np.ones_like(diff_img_T) * 255.])
 

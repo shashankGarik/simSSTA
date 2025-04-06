@@ -9,12 +9,13 @@ from config import args
 import os
 
 class Environment():
-    def __init__(self, height, width, obs_vec):
+    def __init__(self, height, width, obs_vec, args):
         # Initialize Pygame necessary for initialising the simulation window and graphics
         print('Initializing Environment')
         pygame.init()
 
         # Define screen dimensions
+        self.args = args
         self.height,self.width = height,width
         self.screen = pygame.display.set_mode((self.width, self.height))
         
@@ -51,21 +52,6 @@ class Environment():
             self.obstacle_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/carssta.jpg'),(65, 65))
             self.car_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/noentry.jpg'),(60, 60))
             self.pedestrian_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/pedestrian.PNG'),(30, 30))
-
-        if args.save_data:
-            import os
-
-            main_path = os.path.dirname(os.path.abspath(__file__))
-
-            # Define the potential dataset paths
-            dataset_01_path = os.path.join(main_path, "dataset_01")
-
-            # Check which dataset exists and set it as the main path
-            if os.path.exists(dataset_01_path):
-                raise FileNotFoundError("'dataset_01'  exists in the current directory.")
-            else:
-                self.main_path = dataset_01_path
-                os.mkdir(dataset_01_path)  # Creates the directory
 
 
     def update_poses(self, cur_pos, goal_pos):
@@ -402,7 +388,7 @@ class Environment():
                 pt2=np.float32([[0,0],[width,0],[0,height],[width,height]])
                 matrix = cv2.getPerspectiveTransform(pt1,pt2)
                 output = cv2.warpPerspective(transposed_array,matrix,(width, height))
-                output = cv2.resize(output, (128, 128))
+                output = cv2.resize(output, (self.args.img_width, self.args.img_width))
                 output = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
                 # cv2.imshow('not gonna work',output)
                 # cv2.waitKey(1)
@@ -413,32 +399,28 @@ class Environment():
 
 
     #save camera images
-    def save_camera_image(self, frame_sizes ,frame_corners, index, train_len, val_len, test_len, t2no, t2nd, past_input = None, buffer = 500):
+    def save_camera_image(self, save_dir, frame_sizes ,frame_corners, index, train_len, val_len, test_len, t2no, t2nd, past_input = None, buffer = 500):
 
         train_buffer = buffer
         val_buffer = buffer + train_buffer + train_len
         test_buffer = buffer + val_buffer + val_len
 
-        if index >= train_buffer and index  < train_buffer + train_len:
+        if index >= train_buffer and index < train_buffer + train_len:
             data_type = 'train'
             reset_counter = buffer
-        elif index >= val_buffer and index  < val_buffer + val_len:
+        elif index >= val_buffer and index < val_buffer + val_len:
             data_type = 'val'
             reset_counter = val_buffer
-        elif index >= test_buffer and index  < test_buffer + test_len:
+        elif index >= test_buffer and index < test_buffer + test_len:
             data_type = 'test'
             reset_counter = test_buffer
         else:
             data_type = None # stop saving
 
-        # main_path = "C:/Users/Welcome/Documents/Kouby/M.S.Robo- Georgia Tech/GATECH LABS/SHREYAS_LAB/Simulation_Environment/Github Simulation Network/dataset/"
-        # Get the current working director
-
-
         if data_type != None:
             import os
             # branched_path = self.main_path + data_type
-            branched_path = os.path.join(self.main_path, data_type)
+            branched_path = os.path.join(save_dir, data_type)
             for idx in range(len(frame_sizes)): #iterating for each box
                 path_images = branched_path + "/camera_" + str(idx) +"/images"
                 path_t2no = branched_path + "/camera_" + str(idx) +"/t2no"
@@ -465,7 +447,6 @@ class Environment():
                 save_t2nd_name = branched_path + "/camera_" + str(idx)  + "/t2nd" + "/image_" + str(index) + ".png"
 
                 # output = outputs[idx]
-                print(np.max(t2no))
                 output_t2no = t2no[idx]
                 output_t2nd = t2nd[idx]
                 output = past_input[idx]
