@@ -58,12 +58,16 @@ class SSTA_predictor:
         self.q_E = queue.Queue(args.threshold_time_step_gt)
         self.q_E_t2nd = queue.Queue(args.threshold_time_step_gt)
         self.q_inputs = queue.Queue(args.threshold_time_step_gt)
-        self.B = np.ones((self.args.img_width,self.args.img_width))*255.0
+        # self.B = (np.ones((self.args.img_width,self.args.img_width))*255.0)[np.newaxis,:,:] # if you want obstacles in T2N0
+        self.B = None
         self.t2n_gt_time = args.threshold_time_step_gt
         self.t2n_pd_time = args.threshold_time_step_pd
 
         self.t2no = None
         self.t2nd = None
+        self.prev_inputs = None
+        self.outputs = None
+        self.curr_inputs = None
 
         self.vis = args.vis_T2NO_D
 
@@ -73,10 +77,19 @@ class SSTA_predictor:
 
         self.loss = nn.MSELoss()
 
-    def get_predictions(self, inputs):
+    def update(self, inputs, time):
+        if time < 5:
+            self.B = np.uint8(np.dot(inputs[...,:3], [0.200, 0.587, 0.114])) ## convert to grayscale
 
-        t2no, t2nd, = self.compute_t2nod(inputs)
-      
+        self.t2no, self.t2nd, self.prev_inputs = self.get_ground_truth(inputs)
+        if self.args.do_inference:
+            self.outputs, self.curr_inputs = self.get_predictions(inputs, self.t2no, self.t2nd)
+                
+    def get_params(self):
+        return self.t2no, self.t2nd, self.prev_inputs, self.curr_inputs, self.outputs
+
+    def get_predictions(self, inputs, t2no, t2nd):
+     
         inputs = np.float32(inputs/255.00)
 
         inputs = torch.tensor(inputs).unsqueeze(1).to(args.device)
@@ -104,11 +117,11 @@ class SSTA_predictor:
                 elif args.message_type == 'randn':
                     self.messages[model_name] = torch.randn_like(self.messages[model_name])
 
-        if self.is_train:
-            gt_t2ns =  np.concatenate([t2no[view][np.newaxis,:,:], t2nd[view][np.newaxis,:,:]], axis = 0)
-            gt_t2ns= torch.tensor(gt_t2ns, dtype=torch.float32).permute((1,2,0)).to(self.args.device)
-            gt_t2ns.detach().cpu()
-            self.train(output.squeeze(), gt_t2ns)
+        # if self.is_train:
+        #     gt_t2ns =  np.concatenate([t2no[view][np.newaxis,:,:], t2nd[view][np.newaxis,:,:]], axis = 0)
+        #     gt_t2ns= torch.tensor(gt_t2ns, dtype=torch.float32).permute((1,2,0)).to(self.args.device)
+        #     gt_t2ns.detach().cpu()
+        #     self.train(output.squeeze(), gt_t2ns)
 
         output0 = outputs[0][:,:,:,:,:].detach().cpu().numpy().squeeze()
         output1 = outputs[1][:,:,:,:,:].detach().cpu().numpy().squeeze()
@@ -118,8 +131,7 @@ class SSTA_predictor:
         if self.vis:
             vis = self.visualize(outputs, inputs, t2no, t2nd)
 
-        return vis
-    
+        return outputs, inputs
 
     def get_ground_truth(self, inputs):
         inputs_shape = inputs.shape
@@ -137,7 +149,6 @@ class SSTA_predictor:
     def train(self, pred, gt):
 
         loss = self.loss(pred, gt)
-        print('yse')
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -176,10 +187,10 @@ class SSTA_predictor:
             relevant_msgs.append(messages[ssta])
         return relevant_msgs
 
-    def compute_t2nod(self, frame):
+    def compute_t2nod(self, frame):        
         frame = np.uint8(np.dot(frame[...,:3], [0.200, 0.587, 0.114])) ## convert to grayscale
         
-        diff_img_T = (np.abs(self.B[np.newaxis,:,:]-frame).astype(np.uint8) > 70) * 255.  # [False, True]
+        diff_img_T = (np.abs(self.B-frame).astype(np.uint8) > 70) * 255.  # [False, True]
         self.q_E.put(diff_img_T)
 
         data_stack = np.array(list(self.q_E.queue))
@@ -199,11 +210,11 @@ class SSTA_predictor:
         # print(masked_data[:,1,100,100])
         t2nd_img = np.argmin(masked_data, axis=0) 
 
+        
+        # # # Step 6: Handle edge cases
         obstacles = np.all((data_stack == 255), axis=0)
-
-        # # Step 6: Handle edge cases
         t2nd_img = np.where(obstacles, self.t2n_gt_time, t2nd_img)  # Use argmax index if no valid min exists
-
+        t2nd_img[t2nd_img == 0] = self.t2n_gt_time
         self.q_E.get()
         return t2no_img, t2nd_img
 

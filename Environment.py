@@ -7,6 +7,7 @@ from controllers_APF import *
 from test_cases import *
 from config import args
 import os
+import shutil
 
 class Environment():
     def __init__(self, height, width, obs_vec, args):
@@ -53,6 +54,20 @@ class Environment():
             self.car_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/noentry.jpg'),(60, 60))
             self.pedestrian_img = pygame.transform.scale(pygame.image.load('/home/sgarikipati7/packages/simSSTA/sim_vis_images/pedestrian.PNG'),(30, 30))
 
+        if args.save_data:
+            main_path = os.path.dirname(os.path.abspath(__file__))
+
+            # Define the potential dataset paths
+            i = 0
+            while os.path.exists(os.path.join(main_path, f"dataset_{str((i)).zfill(2)}")):
+                if self.args.remove_old_data:
+                    shutil.rmtree(os.path.join(main_path, f"dataset_{str((i)).zfill(2)}"))
+                i += 1
+            if self.args.remove_old_data:
+                self.save_dir = os.path.join(main_path, "dataset_00")
+            else:
+                self.save_dir = os.path.join(main_path, f"dataset_{str((i)).zfill(2)}")
+            os.mkdir(self.save_dir)
 
     def update_poses(self, cur_pos, goal_pos):
         self.cur_pos = cur_pos
@@ -399,7 +414,7 @@ class Environment():
 
 
     #save camera images
-    def save_camera_image(self, save_dir, frame_sizes ,frame_corners, index, train_len, val_len, test_len, t2no, t2nd, past_input = None, buffer = 500):
+    def save_camera_image(self, num_ssta, index, train_len, val_len, test_len, t2no, t2nd, past_input, buffer = 500):
 
         train_buffer = buffer
         val_buffer = buffer + train_buffer + train_len
@@ -420,8 +435,8 @@ class Environment():
         if data_type != None:
             import os
             # branched_path = self.main_path + data_type
-            branched_path = os.path.join(save_dir, data_type)
-            for idx in range(len(frame_sizes)): #iterating for each box
+            branched_path = os.path.join(self.save_dir, data_type)
+            for idx in range(num_ssta): #iterating for each box
                 path_images = branched_path + "/camera_" + str(idx) +"/images"
                 path_t2no = branched_path + "/camera_" + str(idx) +"/t2no"
                 path_t2nd = branched_path + "/camera_" + str(idx) +"/t2nd"
@@ -441,7 +456,7 @@ class Environment():
 
             # outputs = self.get_frame(frame_sizes ,frame_corners)
             
-            for idx in range(len(frame_sizes)): #iterating for each box
+            for idx in range(num_ssta): #iterating for each box
                 save_image_name = branched_path + "/camera_" + str(idx)  + "/images" + "/image_" + str(index) + ".png"
                 save_t2no_name = branched_path + "/camera_" + str(idx)  + "/t2no" + "/image_" + str(index) + ".png"
                 save_t2nd_name = branched_path + "/camera_" + str(idx)  + "/t2nd" + "/image_" + str(index) + ".png"
